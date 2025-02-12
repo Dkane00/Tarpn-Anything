@@ -142,9 +142,46 @@ else
    exit 1;
 fi
 
+################################################################
+################################################################
+#### Check if we have SUDO access
+
+# if [ -f /usr/local/etc/sudoerstest.txt ];
+# then
+#    echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
+#    echo "ERROR:  have been changed from default.  "
+#    echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
+#    echo "ERROR:  Make sure to set up 'pi' as the user name, "
+#    echo "ERROR:  and to automatically log in to desktop."
+#    echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"
+#    echo "ERROR:  include this error message as well as the following block of data:"
+#    echo "ERROR:  LS of etc"
+#    ls -lrats /usr/local/etc
+#    echo "ERROR:   Aborting now."
+#    exit 1
+# else
+uptime > ${HOME}/sudoerstest.txt
+date >> ${HOME}/sudoerstest.txt
+sudo mv ${HOME}/sudoerstest.txt /usr/local/etc
+if [ -f /usr/local/etc/sudoerstest.txt ];
+then
+      echo
+else
+      echo "ERROR:  The user named ${USER} needs to have sudo access to run this script "
+      echo "ERROR:  The script's test for access has returned a failure."
+      echo "ERROR:  Please check to see if ${USER} has sudo access"
+      echo "ERROR:  You can check if ${USER} has sudo access by running the command below"
+      echo "ERROR:  command to check if User had sudo access: id ${USER}"
+      echo "ERROR:"
+      echo "ERROR:"
+      echo "ERROR:"
+      echo "ERROR:   Aborting now."
+      exit 1
+   fi
+
 
 ################# Write file to bypass hardware checks
-tail /usr/local/etc/bypass-platform-checks.txt
+sudo tail /usr/local/etc/bypass-platform-checks.txt
 
 
 
@@ -382,51 +419,6 @@ then
         exit 1;
      fi
 fi
-
-################################################################
-################################################################
-#### Check if we have SUDO access
-
-if [ -f /usr/local/etc/sudoerstest.txt ];
-then
-   echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
-   echo "ERROR:  have been changed from default.  "
-   echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
-   echo "ERROR:  Make sure to set up 'pi' as the user name, "
-   echo "ERROR:  and to automatically log in to desktop."
-   echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"
-   echo "ERROR:  include this error message as well as the following block of data:"
-   echo "ERROR:  LS of etc"
-   ls -lrats /usr/local/etc
-   echo "ERROR:   Aborting now."
-   exit 1
-else
-   uptime > ${HOME}/sudoerstest.txt
-   date >> ${HOME}/sudoerstest.txt
-   sudo mv ${HOME}/sudoerstest.txt /usr/local/etc
-   if [ -f /usr/local/etc/sudoerstest.txt ];
-   then
-       echo
-   else
-       echo "ERROR:  The user named 'pi' is supposed to have sudo access by default. "
-       echo "ERROR:  The script's test for access has returned a failure."
-       echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
-       echo "ERROR:  Make sure to set up 'pi' as the user name in the PI startup prompts."
-       echo "ERROR:"
-       echo "ERROR:  If this error is unexpected, please send a note"
-       echo "ERROR:  to tarpn@groups.io and include this error message"
-       echo "ERROR:  as well as the following block of data:"
-       echo "ERROR:  LS of etc"
-       ls -lrats /usr/local/etc
-       echo "ERROR:  LS of PI"
-       ls -lrats
-       echo "ERROR:   Aborting now."
-       exit 1
-    fi
-fi
-
-
-
 
 ################################################################
 ##### Save the SOURCE_URL by writing the data set at the top
