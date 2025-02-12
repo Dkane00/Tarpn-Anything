@@ -105,6 +105,7 @@ SOURCE_URL="https://tarpn.net/bullseye2021";
 #### 2023-05-19  BULLSEYE 020-- add support for "c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
 #### 2023-05-25  BULLSEYE 021-- add support for "d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX,
 #### 2023-05-25  BULLSEYE 022-- add support for Raspberry PI 3A+  -- Tadd
+#### 2025-02-12  BULLSEYE 022-- removed all referances to 'pi' user and put the standard ${USER} variable in place, added writing a file to bypass hardware checks and commented out all the checks for raspberry pi hardware -- David W6MZT
 echo "######"
 echo "######"
 echo "###### tarpn start 1 Version BULLSEYE 022"
@@ -503,7 +504,7 @@ echo
 
 
 #rm -f tarpn_start1dl.sh
-#startget tarpn_start1dl.sh
+startget tarpn_start1dl.sh
 if [ -f tarpn_start1dl.sh ];
 then
    echo "##### script 1dL downloaded successfully"
