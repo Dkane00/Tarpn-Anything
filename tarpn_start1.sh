@@ -3,42 +3,42 @@
 
 
 
-startget() {
-if [ -f $1 ];
-then
-   echo $1 "already exists -- deleting it"
-   rm $1
-fi
+# startget() {
+# if [ -f $1 ];
+# then
+#    echo $1 "already exists -- deleting it"
+#    rm $1
+# fi
 
-wget -o /dev/null $SOURCE_URL/$1
-if [ -f $1 ];
-then
-   echo $1 "ok"
-else
-   wget -o /dev/null $SOURCE_URL/$1
-   if [ -f $1 ];
-   then
-      echo $1 "downlaoded on 2nd try by startget"
-   else
-      wget -o /dev/null $SOURCE_URL/$1
-      if [ -f $1 ];
-      then
-         echo $1 "downlaoded on 3rd try by startget"
-      else
-         echo "startget    Failed to download" $1
-         echo "startget    Abort script"
-         exit 1
-      fi
-   fi
-fi
-}
+# wget -o /dev/null $SOURCE_URL/$1
+# if [ -f $1 ];
+# then
+#    echo $1 "ok"
+# else
+#    wget -o /dev/null $SOURCE_URL/$1
+#    if [ -f $1 ];
+#    then
+#       echo $1 "downlaoded on 2nd try by startget"
+#    else
+#       wget -o /dev/null $SOURCE_URL/$1
+#       if [ -f $1 ];
+#       then
+#          echo $1 "downlaoded on 3rd try by startget"
+#       else
+#          echo "startget    Failed to download" $1
+#          echo "startget    Abort script"
+#          exit 1
+#       fi
+#    fi
+# fi
+# }
 
 
 ###### This is the Internet URL for the web repository where all the TARPN scripts live.
 ###### This address is particular to the script major version this TARPN node will be running.
 ###### This URL gets saved in a secure location on the Raspberry PI's filesystem and is used
 ###### later during run-time to fetch updates.
-SOURCE_URL="https://tarpn.net/bullseye2021";
+# SOURCE_URL="https://tarpn.net/bullseye2021";
 
 
 ##### Please leave the copyright notice and this message in the document and if changes are made,
@@ -133,13 +133,13 @@ uptime
 
 ######## CHECK TO MAKE SURE WE'RE REALLY RUNNING THE SCRIPT THIS CODE WAS WRITTEN FOR
 ######## AND ALSO THAT WE'RE BEING RUN IN THE DIRECTORY WHERE THE SCRIPT WAS DOWNLOADED TO.
-cd ${HOME}
+cd ${HOME}/Tarpn-Anything
 if [ -f tarpn_start1.sh ];
 then
    echo
 else
    echo "ERROR:  Help.  I don't know where I am.  Is this tarpn_start1.sh?  "
-   echo "ERROR:  Please start from the /home/pi directory.  Aborting"
+   echo "ERROR:  Please start from insid the Tarpn-Anywhere repo directory.  Aborting"
    exit 1;
 fi
 
@@ -147,26 +147,8 @@ fi
 ################################################################
 #### Check if we have SUDO access
 
-# if [ -f /usr/local/etc/sudoerstest.txt ];
-# then
-#    echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
-#    echo "ERROR:  have been changed from default.  "
-#    echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
-#    echo "ERROR:  Make sure to set up 'pi' as the user name, "
-#    echo "ERROR:  and to automatically log in to desktop."
-#    echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"
-#    echo "ERROR:  include this error message as well as the following block of data:"
-#    echo "ERROR:  LS of etc"
-#    ls -lrats /usr/local/etc
-#    echo "ERROR:   Aborting now."
-#    exit 1
-# else
-uptime > ${HOME}/sudoerstest.txt
-date >> ${HOME}/sudoerstest.txt
-sudo mv ${HOME}/sudoerstest.txt /usr/local/etc
-if [ -f /usr/local/etc/sudoerstest.txt ];
-then
-      echo
+if sudo -l &>/dev/null; then
+    echo "User has sudo privileges. Proceeding with installation..."
 else
       echo "ERROR:  The user named ${USER} needs to have sudo access to run this script "
       echo "ERROR:  The script's test for access has returned a failure."
@@ -178,7 +160,7 @@ else
       echo "ERROR:"
       echo "ERROR:   Aborting now."
       exit 1
-   fi
+fi
 
 
 ################# Write file to bypass hardware checks
@@ -424,22 +406,22 @@ fi
 ################################################################
 ##### Save the SOURCE_URL by writing the data set at the top
 ##### of this script to the designated delete protected file-system location
-_success=0
+# _success=0
 
 
-rm -f ${HOME}/source_url.txt
-echo $SOURCE_URL > ${HOME}/source_url.txt
-sudo mv ${HOME}/source_url.txt /usr/local/sbin/source_url.txt
+# rm -f ${HOME}/source_url.txt
+# echo $SOURCE_URL > ${HOME}/source_url.txt
+# sudo mv ${HOME}/source_url.txt /usr/local/sbin/source_url.txt
 
-#### Read back the source URL from the filesystem into a local variable
-_source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
-
-
+# #### Read back the source URL from the filesystem into a local variable
+# _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 
 
-echo "###### Install IPUTILS-PING if it is not already here"
-sudo apt-get install --reinstall iputils-ping
 
+
+# echo "###### Install IPUTILS-PING if it is not already here"
+# sudo apt-get install --reinstall iputils-ping
+##### DO NOT need source url stuff for Tarpn-Anywhere everything is in the repo
 #############################################################################################################################################
 ### Check to see if the source-URL has some necessary items
 
@@ -464,55 +446,55 @@ sudo apt-get install --reinstall iputils-ping
 
 echo "###### Proceeding with installation"
 echo
+############## DO NOT need source url stuff for Tarpn-Anywhere 
+# echo -ne "using a source URL of: "
+# echo $_source_url
+# echo
 
-echo -ne "using a source URL of: "
-echo $_source_url
-echo
 
+# echo "###### Download TARPNGET"
+# startget tarpnget.sh
+# if [ -f tarpnget.sh ];
+# then
+#    echo "##### tarpnget downloaded successfully"
+#    chmod +x tarpnget.sh;
+#    sudo mv tarpnget.sh /usr/local/sbin/tarpnget.sh
+# else
+#    echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpnget.  Something is wrong"
+#    echo -e "ERROR: Aborting\n\n\n\n\n"
+#    exit 1;
+# fi
 
-echo "###### Download TARPNGET"
-startget tarpnget.sh
-if [ -f tarpnget.sh ];
-then
-   echo "##### tarpnget downloaded successfully"
-   chmod +x tarpnget.sh;
-   sudo mv tarpnget.sh /usr/local/sbin/tarpnget.sh
-else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpnget.  Something is wrong"
-   echo -e "ERROR: Aborting\n\n\n\n\n"
-   exit 1;
-fi
+# echo
+# echo "###### Download SLEEP-WITH-COUNT"
+# startget sleep_with_count.sh
+# if [ -f sleep_with_count.sh ];
+# then
+#    echo "##### tarpnget downloaded successfully"
+#    chmod +x sleep_with_count.sh;
+#    sudo mv sleep_with_count.sh /usr/local/sbin/sleep_with_count.sh
+# else
+#    echo -e "\n\n\n\n\nERROR:  Failure retrieving sleep_with_count.  Something is wrong"
+#    echo -e "ERROR: Aborting\n\n\n\n\n"
+#    exit 1;
+# fi
 
-echo
-echo "###### Download SLEEP-WITH-COUNT"
-startget sleep_with_count.sh
-if [ -f sleep_with_count.sh ];
-then
-   echo "##### tarpnget downloaded successfully"
-   chmod +x sleep_with_count.sh;
-   sudo mv sleep_with_count.sh /usr/local/sbin/sleep_with_count.sh
-else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving sleep_with_count.  Something is wrong"
-   echo -e "ERROR: Aborting\n\n\n\n\n"
-   exit 1;
-fi
-
-echo "###### Download TARPN INSTALL 1dL"
+echo "###### Running TARPN INSTALL 1dL"
 sleep 1
 echo
 
 
 
 #rm -f tarpn_start1dl.sh
-startget tarpn_start1dl.sh
+#startget tarpn_start1dl.sh ## NOT needed for Tarpn-Anywhere
 if [ -f tarpn_start1dl.sh ];
 then
-   echo "##### script 1dL downloaded successfully"
+   echo "##### running tarpn_start1dl.sh"
    chmod +x tarpn_start1dl.sh;
    echo "##### Transfer control from TARPN START 1 to TARPN START 1dL"
    ./tarpn_start1dl.sh
 else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving script1dl.  Something is wrong"
+   echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpn_script1dl.sh  Something is wrong"
    echo -e "ERROR: Aborting\n\n\n\n\n"
    exit 1;
 fi
