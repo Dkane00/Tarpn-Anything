@@ -151,27 +151,31 @@ uptime
 ########## from which we download more scripts and code.  If not, then we're not being called in the right order.
 ########## We're only supporting a particular startup sequence.
 
-if [ -f /usr/local/sbin/source_url.txt ];
-then
-    echo -n;
-else
-        echo "ERROR0: source URL file not found."
-        echo "ERROR0: Aborting"
-        exit 1
-fi
-_source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
+# if [ -f /usr/local/sbin/source_url.txt ];
+# then
+#     echo -n;
+# else
+#         echo "ERROR0: source URL file not found."
+#         echo "ERROR0: Aborting"
+#         exit 1
+# fi
+# _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 
 
 
 ########## This script is supposed to be called tarpn_start1.sh and should be located in the present working directory.
-#if [ -f tarpn_start1.sh ];
-#then
-#    rm -f tarpn_start1.sh;
-#else
-#        echo "ERROR0: Incorrect calling sequence.  Please see documentation."
-#        echo "ERROR0: Aborting"
-#        exit 1
-#fi
+echo "\n\n\n\n\n checking to make sure we are running in order \n\n\n\n\n"
+
+if [ -f tarpn_start1.sh ];
+then
+      echo "WE are on track Lets keep going!!"
+else
+       echo "ERROR0: Incorrect calling sequence."
+       echo "ERROR0: we might be running in the wrong directory"
+       echo "ERROR0: make sure we are running this from the Tarpn-Anywhere repo Directory"
+       echo "ERROR0: Aborting"
+       exit 1
+fi
 
 ####### Make sure we are in the home/pi directory
 #if [ $PWD == $HOME* ];
@@ -212,8 +216,9 @@ sudo mv ${HOME}/datetemp.txt /usr/local/sbin/tarpn_start1dl_starttime.txt
 echo -n "This SD card is "
 cat /usr/local/sbin/tarpn_start1dl_starttime.txt
 
-source /usr/local/sbin/tarpnget.sh
-source /usr/local/sbin/sleep_with_count.sh
+#### We don't need these for Tarpn-Anywhere
+# source /usr/local/sbin/tarpnget.sh
+# source /usr/local/sbin/sleep_with_count.sh
 
 echo "###### Install ZIP/UNZIP"
 sudo apt-get install zip
@@ -225,8 +230,8 @@ sleep 1
 echo -e "\n\n\n\n\n\n"
 echo "##### get TARPN install script #2 to use at next reboot"
 sleep 1
-#rm -f tarpn_start2.*
-tarpnget tarpn_start2.sh
+
+# tarpnget tarpn_start2.sh
 if [ -f tarpn_start2.sh ];
 then
    echo "##### script 2 downloaded successfully"
@@ -238,6 +243,9 @@ else
    exit 1;
 fi
 
+##### Create Log Files
+
+echo "\n\n\n\n\n Creating Log Files \n\n\n\n\n"
 
 ls /var/log
 
@@ -395,22 +403,14 @@ sudo systemctl disable serial-getty@ttyAMA0.service
 sudo sed -i "s^enable_uart=0^enable_uart=1^" /boot/config.txt
 
 
-#### Create a BPQ directory below ${HOME}
-echo "##### create bpq folder below ${HOME}"
-
-cd ~
-rm -rf bpq
-mkdir bpq
-
-
 
 ##### Get RUNBPQ.SH
 echo "##### get RUNBPQ"
-cd ${HOME}
-tarpnget runbpq.sh
+cd ${HOME}/Tarpn-Anywhere
+# tarpnget runbpq.sh # we don't need this for Tarpn-Anywhere
 if [ -f runbpq.sh ];
 then
-   echo "##### runbpq.sh downloaded successfully"
+   echo "##### runbpq.sh successful"
    chmod +x runbpq.sh;
    sudo mv runbpq.sh /usr/local/sbin/runbpq.sh;
    echo "#####"
@@ -422,11 +422,11 @@ fi
 
 #### Get TEST-INTERNET.SH
 echo "##### get TEST-INTERNET"
-cd ${HOME}
-tarpnget test_internet.sh
+cd ${HOME}/Tarpn-Anywhere
+# tarpnget test_internet.sh # we don't need this for Tarpn-Anywhere
 if [ -f test_internet.sh ];
 then
-   echo "##### runbpq.sh downloaded successfully"
+   echo "##### test_internet.sh successful"
    chmod +x test_internet.sh;
    sudo mv test_internet.sh /usr/local/sbin/test_internet.sh;
    echo "#####"
@@ -437,14 +437,20 @@ else
 fi
 
 
+#### Create a BPQ directory below ${HOME}
+echo "##### create bpq folder below ${HOME}"
+
+cd ~
+rm -rf bpq
+mkdir bpq
 
 #### Get CONFIGURE_NODE_INI.SH
 echo "##### get CONFIGURE NODE"
 cd ${HOME}/bpq
-tarpnget configure_node_ini.sh
+cp ${HOME}/Tarpn-Anywhere/bpq/configure_node_ini.sh .
 if [ -f configure_node_ini.sh ];
 then
-   echo "##### configure_node_ini.sh downloaded successfully"
+   echo "##### configure_node_ini.sh successful"
    chmod +x configure_node_ini.sh;
    echo "#####"
 else
@@ -457,7 +463,7 @@ fi
 #### Get BOILERPLATE.CFG
 echo "##### get BOILERPLATE.CFG"
 cd ${HOME}/bpq
-tarpnget boilerplate.cfg
+cp ${HOME}/Tarpn-Anywhere/bpq/boilerplate.cfg .
 if [ -f boilerplate.cfg ];
 then
    echo "##### boilerplate.cfg downloaded successfully"
@@ -472,7 +478,7 @@ fi
 #### Get MAKE_LOCAL_BPQ.SH
 echo "##### get MAKE_LOCAL_BPQ.SH"
 cd ${HOME}/bpq
-tarpnget make_local_bpq.sh
+cp ${HOME}/Tarpn-Anywhere/bpq/make_local_bpq.sh .
 if [ -f make_local_bpq.sh ];
 then
    echo "##### make_local_bpq.sh downloaded successfully"
@@ -487,7 +493,7 @@ fi
 #### Get CHATCONFIG.CFG
 echo "##### get CHATCONFIG.CFG"
 cd ${HOME}/bpq
-tarpnget chatconfig.cfg
+cp ${HOME}/Tarpn-Anywhere/bpq/chatconfig.cfg .
 if [ -f chatconfig.cfg ];
 then
    echo "##### chatconfig.cfg downloaded successfully"
