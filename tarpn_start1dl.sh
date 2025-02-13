@@ -508,13 +508,12 @@ fi
 
 ##### Get TARPN
 echo "##### get TARPN script"
-cd ${HOME}
-tarpnget tarpn
+cd ${HOME}/Tarpn-Anywhere/
 if [ -f tarpn ];
 then
    echo "##### tarpn downloaded successfully"
    chmod +x tarpn;
-   sudo mv tarpn /usr/local/sbin/tarpn;
+   sudo cp tarpn /usr/local/sbin/tarpn;
    echo "#####"
 else
    echo "ERROR:  Failure retrieving testbpq.  Something is wrong"
@@ -710,10 +709,10 @@ rm -Rf minicom
 rm -f in*
 mkdir minicom
 cd minicom
-tarpnget piminicom.zip
+cp ${home}/Tarpn-Anywhere/minicom/piminicom.zip .
 if [ -f piminicom.zip ];
 then
-    echo "##### piminicom.zip downloaded."
+    echo "##### piminicom.zip loaded."
 else
     echo "ERROR-989 Something is wrong.  I had access to the proper web site but could"
     echo "          not acquire the piminicom.zip data from that web site.  "
@@ -736,7 +735,7 @@ else
     exit 1;
 fi
 chmod +x piminicom
-tarpnget minicom.scr
+cp ${home}/Tarpn-Anywhere/minicom/minicom.scr .
 if [ -f minicom.scr ];
 then
     echo "##### minicom.scr downloaded."
@@ -772,15 +771,16 @@ echo "#####"
 sleep 0.5
 sudo apt-get -y install telnet
 
-uptime
-echo
-echo
-echo "#####"
-echo "#####"
-echo "##### APT-GET install of VIM editor"
-echo "#####"
-echo "#####"
-sleep 0.5
+##### don't think we need vim for this if you want vim install it from command line
+# uptime
+# echo
+# echo
+# echo "#####"
+# echo "#####"
+# echo "##### APT-GET install of VIM editor"
+# echo "#####"
+# echo "#####"
+# sleep 0.5
 #sudo apt-get -y install vim
 ###echo "syntax on" > .vimrc
 
@@ -890,8 +890,9 @@ echo "### cd into new update directory"
 echo -e "### current working directory is "
 pwd
 echo "### Now download the newest BPQ version"
-echo -e "getting it from" $_source_url
-tarpnget $latest_bpq_zipfile.zip
+echo -e "getting it from Tarpn-Anywhere repo on local machine" #$_source_url
+cp ${HOME}/Tarpn-Anywhere/bpq/$latest_bpq_zipfile.zip .
+
 
 if [ -f $latest_bpq_zipfile.zip ];
 then
@@ -915,8 +916,8 @@ cd ~/bpq
 echo "##"
 echo "## Remove old copy of linbpq"
 sudo rm -f linbpq
-echo "## Remove old install zip file"
-sudo rm *.zip
+# echo "## Remove old install zip file"
+# sudo rm *.zip
 echo "## Remove old HTML pages"
 sudo rm -Rf HTMLPages
 sudo rm -Rf HTML
@@ -927,7 +928,7 @@ mv *.zip ~/bpq
 echo "## mv to contents of the zip file"
 cd $latest_bpq_zipfile
 echo "##"
-echo "## moved to update directory.  Now moving .zip and linbpq to home/pi/bpq directory"
+echo "## moved to update directory.  Now moving .zip and linbpq to ${HOME}/bpq directory"
 echo "## Echo the present working directory so them-that-debugs can"
 echo "## check that we are in the update directory where we need to be."
 pwd
@@ -936,7 +937,7 @@ echo "##"
 echo "## now do the move of linbpq and HTMLPages to the ${HOME}/bpq directory"
 mv linbpq ~/bpq
 mv HTMLPages ~/bpq/HTML
-echo ###"
+echo "###"
 echo "## Move back to the bpq directory"
 cd ~/bpq
 echo "## Set meta-data for the linbpq executable"
