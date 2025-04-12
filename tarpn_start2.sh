@@ -1,5 +1,5 @@
 #!/bin/bash
-#### This script is copyright Tadd Torborg KA2DEW 2014-2023.  All rights reserved.
+#### This script is copyright Tadd Torborg KA2DEW 2014-2025.  All rights reserved.
 ##### Please leave this copyright notice in the document and if changes are made,
 ##### indicate at the copyright notice as to what the intent of the changes was.
 ##### Thanks. - Tadd Raleigh NC
@@ -63,8 +63,9 @@ sleep 0.5
 #### 06-08-2023 BULLSEYE-026  Change the error message numbers to be somewhat consistant and non redundant
 #### 01-01-2024 BULLSEYE-027  Use CONTROL_PANEL log instead of PWRMAN log
 #### 02-02-2024 BULLSEYE-028  download and install getver.py to read the NinoTNC version
+#### 03-01-2025 BULLSEYE-029  Fix bug where getver.py was installed in /usr/tarpn/sbin instead of /usr/local/sbin
 
-echo "###### =TARPN START 2 BULLSEYE 028" #=  --VERSION--#########
+echo "###### =TARPN START 2 BULLSEYE 029" #=  --VERSION--#########
 
 
 sleep 0.5
@@ -259,7 +260,7 @@ sudo mv ncpacket-wallpaper.gif /usr/share/rpd-wallpaper
 
 ### get the Version-reader python script
 tarpnget getver.py
-sudo mv getver.py /usr/tarpn/sbin
+sudo mv getver.py /usr/local/sbin
 
 ### Download files related to automatic operation
 tarpnget tarpn_background.sh

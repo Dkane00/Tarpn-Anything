@@ -1,44 +1,44 @@
 #!/bin/bash
-#### This script is copyright Tadd Torborg KA2DEW 2014-2023.  All rights reserved.
+#### This script is copyright Tadd Torborg KA2DEW 2014-2025.  All rights reserved.
 
 
 
-# startget() {
-# if [ -f $1 ];
-# then
-#    echo $1 "already exists -- deleting it"
-#    rm $1
-# fi
+startget() {
+if [ -f $1 ];
+then
+   echo $1 "already exists -- deleting it"
+   rm $1
+fi
 
-# wget -o /dev/null $SOURCE_URL/$1
-# if [ -f $1 ];
-# then
-#    echo $1 "ok"
-# else
-#    wget -o /dev/null $SOURCE_URL/$1
-#    if [ -f $1 ];
-#    then
-#       echo $1 "downlaoded on 2nd try by startget"
-#    else
-#       wget -o /dev/null $SOURCE_URL/$1
-#       if [ -f $1 ];
-#       then
-#          echo $1 "downlaoded on 3rd try by startget"
-#       else
-#          echo "startget    Failed to download" $1
-#          echo "startget    Abort script"
-#          exit 1
-#       fi
-#    fi
-# fi
-# }
+wget -o /dev/null $SOURCE_URL/$1
+if [ -f $1 ];
+then
+   echo $1 "ok"
+else
+   wget -o /dev/null $SOURCE_URL/$1
+   if [ -f $1 ];
+   then
+      echo $1 "downlaoded on 2nd try by startget"
+   else
+      wget -o /dev/null $SOURCE_URL/$1
+      if [ -f $1 ];
+      then
+         echo $1 "downlaoded on 3rd try by startget"
+      else
+         echo "startget    Failed to download" $1
+         echo "startget    Abort script"
+         exit 1
+      fi
+   fi
+fi
+}
 
 
 ###### This is the Internet URL for the web repository where all the TARPN scripts live.
 ###### This address is particular to the script major version this TARPN node will be running.
 ###### This URL gets saved in a secure location on the Raspberry PI's filesystem and is used
 ###### later during run-time to fetch updates.
-# SOURCE_URL="https://tarpn.net/bullseye2021";
+SOURCE_URL="https://tarpn.net/bullseye2021";
 
 
 ##### Please leave the copyright notice and this message in the document and if changes are made,
@@ -105,7 +105,6 @@
 #### 2023-05-19  BULLSEYE 020-- add support for "c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
 #### 2023-05-25  BULLSEYE 021-- add support for "d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX,
 #### 2023-05-25  BULLSEYE 022-- add support for Raspberry PI 3A+  -- Tadd
-#### 2025-02-12  BULLSEYE 022-- removed all referances to 'pi' user and put the standard ${USER} variable in place, added writing a file to bypass hardware checks and commented out all the checks for raspberry pi hardware -- David W6MZT
 echo "######"
 echo "######"
 echo "###### tarpn start 1 Version BULLSEYE 022"
@@ -113,19 +112,19 @@ echo "######"
 echo "######"
 echo "######"
 
-temp_parsing_file="${HOME}/temp_for_tarpn_start.txt";
+temp_parsing_file="/home/pi/temp_for_tarpn_start.txt";
 uptime
 
 
 ########### Verify that the user-name is 'pi'.  If not, abort with an error message
-# if [ $(whoami) != "pi" ]; then
-#    echo "ERROR:  Hello user " $(whoami);
-#    echo "ERROR:  The TARPN start and a couple of the run-time and command scripts "
-#    echo "ERROR:  will fail if the user name is not 'pi'.  Please use Raspberry PI Imager"
-#    echo "ERROR:  to set up 'pi' as the user name, and automatically log in to desktop."
-#    echo "ERROR:   Aborting now."
-#    exit 1
-# fi
+if [ $(whoami) != "pi" ]; then
+   echo "ERROR:  Hello user " $(whoami);
+   echo "ERROR:  The TARPN start and a couple of the run-time and command scripts "
+   echo "ERROR:  will fail if the user name is not 'pi'.  Please use Raspberry PI Imager"
+   echo "ERROR:  to set up 'pi' as the user name, and automatically log in to desktop."
+   echo "ERROR:   Aborting now."
+   exit 1
+fi
 
 
 
@@ -133,174 +132,151 @@ uptime
 
 ######## CHECK TO MAKE SURE WE'RE REALLY RUNNING THE SCRIPT THIS CODE WAS WRITTEN FOR
 ######## AND ALSO THAT WE'RE BEING RUN IN THE DIRECTORY WHERE THE SCRIPT WAS DOWNLOADED TO.
-cd ${HOME}/Tarpn-Anything
+cd /home/pi
 if [ -f tarpn_start1.sh ];
 then
    echo
 else
    echo "ERROR:  Help.  I don't know where I am.  Is this tarpn_start1.sh?  "
-   echo "ERROR:  Please start from insid the Tarpn-Anywhere repo directory.  Aborting"
+   echo "ERROR:  Please start from the /home/pi directory.  Aborting"
    exit 1;
 fi
-
-################################################################
-################################################################
-#### Check if we have SUDO access
-
-if sudo -l &>/dev/null; then
-    echo "User has sudo privileges. Proceeding with installation..."
-else
-      echo "ERROR:  The user named ${USER} needs to have sudo access to run this script "
-      echo "ERROR:  The script's test for access has returned a failure."
-      echo "ERROR:  Please check to see if ${USER} has sudo access"
-      echo "ERROR:  You can check if ${USER} has sudo access by running the command below"
-      echo "ERROR:  command to check if User had sudo access: id ${USER}"
-      echo "ERROR:"
-      echo "ERROR:"
-      echo "ERROR:"
-      echo "ERROR:   Aborting now."
-      exit 1
-fi
-
-
-################# Write file to bypass hardware checks
-sudo tail /usr/local/etc/bypass-platform-checks.txt
 
 
 
 ################# Determine if this Raspberry PI is a supported version
-# sudo rm -f $temp_parsing_file;
-# cat /proc/cpuinfo | grep Revision > $temp_parsing_file
-# _counta=$( cat $temp_parsing_file );
-# _countb=${_counta:11}
+sudo rm -f $temp_parsing_file;
+cat /proc/cpuinfo | grep Revision > $temp_parsing_file
+_counta=$( cat $temp_parsing_file );
+_countb=${_counta:11}
 
-# _value0="000d"     #### Red B+ Chinese
-# _value1="000e"
-# _value2="000f"
-# _value3="0010"
-# _value4="a21041"   ### Raspberry PI 2 B
-# _value5="a01041"   ### also Raspberry PI 2 B ??  v1.1
-# _value6="0013"     ### Raspberry PI B + v2
-# _value7="900092"   #### Raspberry PI Zero
-# _value8="a02082"   #### Raspberry PI 3 B
+_value0="000d"     #### Red B+ Chinese
+_value1="000e"
+_value2="000f"
+_value3="0010"
+_value4="a21041"   ### Raspberry PI 2 B
+_value5="a01041"   ### also Raspberry PI 2 B ??  v1.1
+_value6="0013"     ### Raspberry PI B + v2
+_value7="900092"   #### Raspberry PI Zero
+_value8="a02082"   #### Raspberry PI 3 B
 
-# _value9="a22082"   #### Bob's Raspberry PI 3 B
-# _valueA="a22032"  #### Dylan's Raspberry PI 2B
-# _value10="a22042"  #### 2 Model B (with BCM2837)
-# _value11="a32082"   #### 3 Model B  Sony Japan
-# _value12="a020d3"   #### 3 Model B+ England 3-19-2018
-# _valuea52082="a52082" #### Model 3B Stadium
-# _value4B1="a03111"   #### Raspberry PI 4B 1GB from PiHUT July 2019
-# _value4B2="b03111"   #### Raspberry PI 4B 2GB July 2019
-# _value4B4="c03111"   #### Raspberry PI 4B 4GB July 2019
-# _value4B5="a03112"   #### Raspberry Pi 4 Model B Rev 1.2 1GB
-# _value4B6="b03112"   #### Raspberry Pi 4 Model B Rev 1.2 2GB
-# _value4B7="c03112"   #### Raspberry Pi 4 Model B Rev 1.2 4GB
-# _value4B8="d03114"   #### Raspberry Pi 4 Model B Rev 1.4 8GB
-# _value4B9="b03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB
-# _value4BA="c03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB    hmm... this one came from K7EK on Oct2, 2021
-# _value4BB="b03115"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
-# _value4BC="a03115"   #### Raspberry Pi 4 Model B Rev 1.5 1GB
-# _value4BD="d03114"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
-# _value400A="c03130"   #### PI 400 Rev 1.0 with ARM v7 rev 3 processor 4GB from John Hysell on the TARPN group
-# _valueZ2W="902120"    #### Raspberry Pi Zero 2W v1.0 512MB  Sony UK
-# _value4BE="c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
-# _value4BF="d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX
+_value9="a22082"   #### Bob's Raspberry PI 3 B
+_valueA="a22032"  #### Dylan's Raspberry PI 2B
+_value10="a22042"  #### 2 Model B (with BCM2837)
+_value11="a32082"   #### 3 Model B  Sony Japan
+_value12="a020d3"   #### 3 Model B+ England 3-19-2018
+_valuea52082="a52082" #### Model 3B Stadium
+_value4B1="a03111"   #### Raspberry PI 4B 1GB from PiHUT July 2019
+_value4B2="b03111"   #### Raspberry PI 4B 2GB July 2019
+_value4B4="c03111"   #### Raspberry PI 4B 4GB July 2019
+_value4B5="a03112"   #### Raspberry Pi 4 Model B Rev 1.2 1GB
+_value4B6="b03112"   #### Raspberry Pi 4 Model B Rev 1.2 2GB
+_value4B7="c03112"   #### Raspberry Pi 4 Model B Rev 1.2 4GB
+_value4B8="d03114"   #### Raspberry Pi 4 Model B Rev 1.4 8GB
+_value4B9="b03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB
+_value4BA="c03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB    hmm... this one came from K7EK on Oct2, 2021
+_value4BB="b03115"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
+_value4BC="a03115"   #### Raspberry Pi 4 Model B Rev 1.5 1GB
+_value4BD="d03114"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
+_value400A="c03130"   #### PI 400 Rev 1.0 with ARM v7 rev 3 processor 4GB from John Hysell on the TARPN group
+_valueZ2W="902120"    #### Raspberry Pi Zero 2W v1.0 512MB  Sony UK
+_value4BE="c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
+_value4BF="d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX
 
-# _value3APLUS1="9020e0"  #### Raspberry PI 3A+   Tadd June 25, 2023
+_value3APLUS1="9020e0"  #### Raspberry PI 3A+   Tadd June 25, 2023
 
-# _version_ok=0
-# if [ $_value3APLUS1 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_valueZ2W == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_valuea52082 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value400A == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4BE == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4BD == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4BF == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4BC == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4BB == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4BA == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B9 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B8 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B5 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B6 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B7 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B1 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B2 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value4B4 == $_countb ]; then
-#     _version_ok=1
-#    fi
+_version_ok=0
+if [ $_value3APLUS1 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_valueZ2W == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_valuea52082 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value400A == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4BE == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4BD == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4BF == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4BC == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4BB == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4BA == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B9 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B8 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B5 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B6 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B7 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B1 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B2 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value4B4 == $_countb ]; then
+    _version_ok=1
+   fi
 
-# if [ $_value0 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value1 == $_countb ]; then
-#     _version_ok=1
-#    fi
-# if [ $_value2 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value3 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value4 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value5 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value6 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value8 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value9 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value10 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value11 == $_countb ]; then
-#     _version_ok=1
-#         fi
-# if [ $_value12 == $_countb ]; then
-#     _version_ok=1
-#         fi
+if [ $_value0 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value1 == $_countb ]; then
+    _version_ok=1
+   fi
+if [ $_value2 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value3 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value4 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value5 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value6 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value8 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value9 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value10 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value11 == $_countb ]; then
+    _version_ok=1
+        fi
+if [ $_value12 == $_countb ]; then
+    _version_ok=1
+        fi
 
 
 
@@ -404,24 +380,69 @@ then
 fi
 
 ################################################################
+################################################################
+#### Check if we have SUDO access
+
+if [ -f /usr/local/etc/sudoerstest.txt ];
+then
+   echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
+   echo "ERROR:  have been changed from default.  "
+   echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
+   echo "ERROR:  Make sure to set up 'pi' as the user name, "
+   echo "ERROR:  and to automatically log in to desktop."
+   echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"
+   echo "ERROR:  include this error message as well as the following block of data:"
+   echo "ERROR:  LS of etc"
+   ls -lrats /usr/local/etc
+   echo "ERROR:   Aborting now."
+   exit 1
+else
+   uptime > /home/pi/sudoerstest.txt
+   date >> /home/pi/sudoerstest.txt
+   sudo mv /home/pi/sudoerstest.txt /usr/local/etc
+   if [ -f /usr/local/etc/sudoerstest.txt ];
+   then
+       echo
+   else
+       echo "ERROR:  The user named 'pi' is supposed to have sudo access by default. "
+       echo "ERROR:  The script's test for access has returned a failure."
+       echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
+       echo "ERROR:  Make sure to set up 'pi' as the user name in the PI startup prompts."
+       echo "ERROR:"
+       echo "ERROR:  If this error is unexpected, please send a note"
+       echo "ERROR:  to tarpn@groups.io and include this error message"
+       echo "ERROR:  as well as the following block of data:"
+       echo "ERROR:  LS of etc"
+       ls -lrats /usr/local/etc
+       echo "ERROR:  LS of PI"
+       ls -lrats
+       echo "ERROR:   Aborting now."
+       exit 1
+    fi
+fi
+
+
+
+
+################################################################
 ##### Save the SOURCE_URL by writing the data set at the top
 ##### of this script to the designated delete protected file-system location
-# _success=0
+_success=0
 
 
-# rm -f ${HOME}/source_url.txt
-# echo $SOURCE_URL > ${HOME}/source_url.txt
-# sudo mv ${HOME}/source_url.txt /usr/local/sbin/source_url.txt
+rm -f /home/pi/source_url.txt
+echo $SOURCE_URL > /home/pi/source_url.txt
+sudo mv /home/pi/source_url.txt /usr/local/sbin/source_url.txt
 
-# #### Read back the source URL from the filesystem into a local variable
-# _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
-
-
+#### Read back the source URL from the filesystem into a local variable
+_source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 
 
-# echo "###### Install IPUTILS-PING if it is not already here"
-# sudo apt-get install --reinstall iputils-ping
-##### DO NOT need source url stuff for Tarpn-Anywhere everything is in the repo
+
+
+echo "###### Install IPUTILS-PING if it is not already here"
+sudo apt-get install --reinstall iputils-ping
+
 #############################################################################################################################################
 ### Check to see if the source-URL has some necessary items
 
@@ -446,55 +467,55 @@ fi
 
 echo "###### Proceeding with installation"
 echo
-############## DO NOT need source url stuff for Tarpn-Anywhere 
-# echo -ne "using a source URL of: "
-# echo $_source_url
-# echo
+
+echo -ne "using a source URL of: "
+echo $_source_url
+echo
 
 
-# echo "###### Download TARPNGET"
-# startget tarpnget.sh
-# if [ -f tarpnget.sh ];
-# then
-#    echo "##### tarpnget downloaded successfully"
-#    chmod +x tarpnget.sh;
-#    sudo mv tarpnget.sh /usr/local/sbin/tarpnget.sh
-# else
-#    echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpnget.  Something is wrong"
-#    echo -e "ERROR: Aborting\n\n\n\n\n"
-#    exit 1;
-# fi
+echo "###### Download TARPNGET"
+startget tarpnget.sh
+if [ -f tarpnget.sh ];
+then
+   echo "##### tarpnget downloaded successfully"
+   chmod +x tarpnget.sh;
+   sudo mv tarpnget.sh /usr/local/sbin/tarpnget.sh
+else
+   echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpnget.  Something is wrong"
+   echo -e "ERROR: Aborting\n\n\n\n\n"
+   exit 1;
+fi
 
-# echo
-# echo "###### Download SLEEP-WITH-COUNT"
-# startget sleep_with_count.sh
-# if [ -f sleep_with_count.sh ];
-# then
-#    echo "##### tarpnget downloaded successfully"
-#    chmod +x sleep_with_count.sh;
-#    sudo mv sleep_with_count.sh /usr/local/sbin/sleep_with_count.sh
-# else
-#    echo -e "\n\n\n\n\nERROR:  Failure retrieving sleep_with_count.  Something is wrong"
-#    echo -e "ERROR: Aborting\n\n\n\n\n"
-#    exit 1;
-# fi
+echo
+echo "###### Download SLEEP-WITH-COUNT"
+startget sleep_with_count.sh
+if [ -f sleep_with_count.sh ];
+then
+   echo "##### tarpnget downloaded successfully"
+   chmod +x sleep_with_count.sh;
+   sudo mv sleep_with_count.sh /usr/local/sbin/sleep_with_count.sh
+else
+   echo -e "\n\n\n\n\nERROR:  Failure retrieving sleep_with_count.  Something is wrong"
+   echo -e "ERROR: Aborting\n\n\n\n\n"
+   exit 1;
+fi
 
-echo "###### Running TARPN INSTALL 1dL"
+echo "###### Download TARPN INSTALL 1dL"
 sleep 1
 echo
 
 
 
-#rm -f tarpn_start1dl.sh
-#startget tarpn_start1dl.sh ## NOT needed for Tarpn-Anywhere
+rm -f tarpn_start1dl.sh
+startget tarpn_start1dl.sh
 if [ -f tarpn_start1dl.sh ];
 then
-   echo "##### running tarpn_start1dl.sh"
+   echo "##### script 1dL downloaded successfully"
    chmod +x tarpn_start1dl.sh;
    echo "##### Transfer control from TARPN START 1 to TARPN START 1dL"
    ./tarpn_start1dl.sh
 else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpn_script1dl.sh  Something is wrong"
+   echo -e "\n\n\n\n\nERROR:  Failure retrieving script1dl.  Something is wrong"
    echo -e "ERROR: Aborting\n\n\n\n\n"
    exit 1;
 fi
