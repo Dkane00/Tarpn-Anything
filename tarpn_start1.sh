@@ -112,19 +112,19 @@ echo "######"
 echo "######"
 echo "######"
 
-temp_parsing_file="/home/pi/temp_for_tarpn_start.txt";
+temp_parsing_file="$HOME/temp_for_tarpn_start.txt";
 uptime
 
 
 ########### Verify that the user-name is 'pi'.  If not, abort with an error message
-if [ $(whoami) != "pi" ]; then
-   echo "ERROR:  Hello user " $(whoami);
-   echo "ERROR:  The TARPN start and a couple of the run-time and command scripts "
-   echo "ERROR:  will fail if the user name is not 'pi'.  Please use Raspberry PI Imager"
-   echo "ERROR:  to set up 'pi' as the user name, and automatically log in to desktop."
-   echo "ERROR:   Aborting now."
-   exit 1
-fi
+# if [ $(whoami) != "pi" ]; then
+#    echo "ERROR:  Hello user " $(whoami);
+#    echo "ERROR:  The TARPN start and a couple of the run-time and command scripts "
+#    echo "ERROR:  will fail if the user name is not 'pi'.  Please use Raspberry PI Imager"
+#    echo "ERROR:  to set up 'pi' as the user name, and automatically log in to desktop."
+#    echo "ERROR:   Aborting now."
+#    exit 1
+# fi
 
 
 
@@ -132,7 +132,7 @@ fi
 
 ######## CHECK TO MAKE SURE WE'RE REALLY RUNNING THE SCRIPT THIS CODE WAS WRITTEN FOR
 ######## AND ALSO THAT WE'RE BEING RUN IN THE DIRECTORY WHERE THE SCRIPT WAS DOWNLOADED TO.
-cd /home/pi
+cd $HOME/Tarpn-Anywhere
 if [ -f tarpn_start1.sh ];
 then
    echo
@@ -143,140 +143,142 @@ else
 fi
 
 
+sudo touch /usr/local/etc/bypass-platform-checks.txt
+
 
 ################# Determine if this Raspberry PI is a supported version
-sudo rm -f $temp_parsing_file;
-cat /proc/cpuinfo | grep Revision > $temp_parsing_file
-_counta=$( cat $temp_parsing_file );
-_countb=${_counta:11}
+# sudo rm -f $temp_parsing_file;
+# cat /proc/cpuinfo | grep Revision > $temp_parsing_file
+# _counta=$( cat $temp_parsing_file );
+# _countb=${_counta:11}
 
-_value0="000d"     #### Red B+ Chinese
-_value1="000e"
-_value2="000f"
-_value3="0010"
-_value4="a21041"   ### Raspberry PI 2 B
-_value5="a01041"   ### also Raspberry PI 2 B ??  v1.1
-_value6="0013"     ### Raspberry PI B + v2
-_value7="900092"   #### Raspberry PI Zero
-_value8="a02082"   #### Raspberry PI 3 B
+# _value0="000d"     #### Red B+ Chinese
+# _value1="000e"
+# _value2="000f"
+# _value3="0010"
+# _value4="a21041"   ### Raspberry PI 2 B
+# _value5="a01041"   ### also Raspberry PI 2 B ??  v1.1
+# _value6="0013"     ### Raspberry PI B + v2
+# _value7="900092"   #### Raspberry PI Zero
+# _value8="a02082"   #### Raspberry PI 3 B
 
-_value9="a22082"   #### Bob's Raspberry PI 3 B
-_valueA="a22032"  #### Dylan's Raspberry PI 2B
-_value10="a22042"  #### 2 Model B (with BCM2837)
-_value11="a32082"   #### 3 Model B  Sony Japan
-_value12="a020d3"   #### 3 Model B+ England 3-19-2018
-_valuea52082="a52082" #### Model 3B Stadium
-_value4B1="a03111"   #### Raspberry PI 4B 1GB from PiHUT July 2019
-_value4B2="b03111"   #### Raspberry PI 4B 2GB July 2019
-_value4B4="c03111"   #### Raspberry PI 4B 4GB July 2019
-_value4B5="a03112"   #### Raspberry Pi 4 Model B Rev 1.2 1GB
-_value4B6="b03112"   #### Raspberry Pi 4 Model B Rev 1.2 2GB
-_value4B7="c03112"   #### Raspberry Pi 4 Model B Rev 1.2 4GB
-_value4B8="d03114"   #### Raspberry Pi 4 Model B Rev 1.4 8GB
-_value4B9="b03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB
-_value4BA="c03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB    hmm... this one came from K7EK on Oct2, 2021
-_value4BB="b03115"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
-_value4BC="a03115"   #### Raspberry Pi 4 Model B Rev 1.5 1GB
-_value4BD="d03114"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
-_value400A="c03130"   #### PI 400 Rev 1.0 with ARM v7 rev 3 processor 4GB from John Hysell on the TARPN group
-_valueZ2W="902120"    #### Raspberry Pi Zero 2W v1.0 512MB  Sony UK
-_value4BE="c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
-_value4BF="d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX
+# _value9="a22082"   #### Bob's Raspberry PI 3 B
+# _valueA="a22032"  #### Dylan's Raspberry PI 2B
+# _value10="a22042"  #### 2 Model B (with BCM2837)
+# _value11="a32082"   #### 3 Model B  Sony Japan
+# _value12="a020d3"   #### 3 Model B+ England 3-19-2018
+# _valuea52082="a52082" #### Model 3B Stadium
+# _value4B1="a03111"   #### Raspberry PI 4B 1GB from PiHUT July 2019
+# _value4B2="b03111"   #### Raspberry PI 4B 2GB July 2019
+# _value4B4="c03111"   #### Raspberry PI 4B 4GB July 2019
+# _value4B5="a03112"   #### Raspberry Pi 4 Model B Rev 1.2 1GB
+# _value4B6="b03112"   #### Raspberry Pi 4 Model B Rev 1.2 2GB
+# _value4B7="c03112"   #### Raspberry Pi 4 Model B Rev 1.2 4GB
+# _value4B8="d03114"   #### Raspberry Pi 4 Model B Rev 1.4 8GB
+# _value4B9="b03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB
+# _value4BA="c03114"   #### Raspberry Pi 4 Model B Rev 1.4 2GB    hmm... this one came from K7EK on Oct2, 2021
+# _value4BB="b03115"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
+# _value4BC="a03115"   #### Raspberry Pi 4 Model B Rev 1.5 1GB
+# _value4BD="d03114"   #### Raspberry Pi 4 Model B Rev 1.5 2GB
+# _value400A="c03130"   #### PI 400 Rev 1.0 with ARM v7 rev 3 processor 4GB from John Hysell on the TARPN group
+# _valueZ2W="902120"    #### Raspberry Pi Zero 2W v1.0 512MB  Sony UK
+# _value4BE="c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
+# _value4BF="d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX
 
-_value3APLUS1="9020e0"  #### Raspberry PI 3A+   Tadd June 25, 2023
+# _value3APLUS1="9020e0"  #### Raspberry PI 3A+   Tadd June 25, 2023
 
-_version_ok=0
-if [ $_value3APLUS1 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_valueZ2W == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_valuea52082 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value400A == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4BE == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4BD == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4BF == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4BC == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4BB == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4BA == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B9 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B8 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B5 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B6 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B7 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B1 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B2 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value4B4 == $_countb ]; then
-    _version_ok=1
-   fi
+# _version_ok=0
+# if [ $_value3APLUS1 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_valueZ2W == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_valuea52082 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value400A == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4BE == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4BD == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4BF == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4BC == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4BB == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4BA == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B9 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B8 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B5 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B6 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B7 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B1 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B2 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value4B4 == $_countb ]; then
+#     _version_ok=1
+#    fi
 
-if [ $_value0 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value1 == $_countb ]; then
-    _version_ok=1
-   fi
-if [ $_value2 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value3 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value4 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value5 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value6 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value8 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value9 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value10 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value11 == $_countb ]; then
-    _version_ok=1
-        fi
-if [ $_value12 == $_countb ]; then
-    _version_ok=1
-        fi
+# if [ $_value0 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value1 == $_countb ]; then
+#     _version_ok=1
+#    fi
+# if [ $_value2 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value3 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value4 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value5 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value6 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value8 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value9 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value10 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value11 == $_countb ]; then
+#     _version_ok=1
+#         fi
+# if [ $_value12 == $_countb ]; then
+#     _version_ok=1
+#         fi
 
 
 
@@ -397,14 +399,14 @@ then
    echo "ERROR:   Aborting now."
    exit 1
 else
-   uptime > /home/pi/sudoerstest.txt
-   date >> /home/pi/sudoerstest.txt
-   sudo mv /home/pi/sudoerstest.txt /usr/local/etc
+   uptime > $HOME/sudoerstest.txt
+   date >> $HOME/sudoerstest.txt
+   sudo mv $HOME/sudoerstest.txt /usr/local/etc
    if [ -f /usr/local/etc/sudoerstest.txt ];
    then
        echo
    else
-       echo "ERROR:  The user named 'pi' is supposed to have sudo access by default. "
+       echo "ERROR:  The user named '$USER' is supposed to have sudo access by default. "
        echo "ERROR:  The script's test for access has returned a failure."
        echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
        echo "ERROR:  Make sure to set up 'pi' as the user name in the PI startup prompts."
@@ -430,9 +432,9 @@ fi
 _success=0
 
 
-rm -f /home/pi/source_url.txt
-echo $SOURCE_URL > /home/pi/source_url.txt
-sudo mv /home/pi/source_url.txt /usr/local/sbin/source_url.txt
+rm -f $HOME/source_url.txt
+echo $SOURCE_URL > $HOME/source_url.txt
+sudo mv $HOME/source_url.txt /usr/local/sbin/source_url.txt
 
 #### Read back the source URL from the filesystem into a local variable
 _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
