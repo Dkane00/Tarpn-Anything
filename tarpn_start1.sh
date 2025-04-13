@@ -406,17 +406,20 @@ else
    then
        echo
    else
-       echo "ERROR:  The user named '$USER' is supposed to have sudo access by default. "
+       echo "ERROR:  The user named '$USER' needs to have sudo access to install TARPN. "
        echo "ERROR:  The script's test for access has returned a failure."
-       echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
-       echo "ERROR:  Make sure to set up 'pi' as the user name in the PI startup prompts."
-       echo "ERROR:"
-       echo "ERROR:  If this error is unexpected, please send a note"
-       echo "ERROR:  to tarpn@groups.io and include this error message"
-       echo "ERROR:  as well as the following block of data:"
-       echo "ERROR:  LS of etc"
-       ls -lrats /usr/local/etc
-       echo "ERROR:  LS of PI"
+       echo "ERROR:  NEED to add '$USER' to the 'sudo group' "
+       echo "ERROR:  Command to add '$USER' to the sudo group:"
+       echo "COMMAND:  sudo usermod -aG sudo $USER"
+      #  echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
+      #  echo "ERROR:  Make sure to set up 'pi' as the user name in the PI startup prompts."
+      #  echo "ERROR:"
+      #  echo "ERROR:  If this error is unexpected, please send a note"
+      #  echo "ERROR:  to tarpn@groups.io and include this error message"
+      #  echo "ERROR:  as well as the following block of data:"
+      #  echo "ERROR:  LS of etc"
+      #  ls -lrats /usr/local/etc
+      #  echo "ERROR:  LS of PI"
        ls -lrats
        echo "ERROR:   Aborting now."
        exit 1
@@ -502,14 +505,15 @@ else
    exit 1;
 fi
 
-echo "###### Download TARPN INSTALL 1dL"
+# echo "###### Download TARPN INSTALL 1dL"
 sleep 1
-echo
+# echo
 
 
 
-rm -f tarpn_start1dl.sh
-startget tarpn_start1dl.sh
+# rm -f tarpn_start1dl.sh
+# startget tarpn_start1dl.sh
+cd $HOME/Tarpn-Anything
 if [ -f tarpn_start1dl.sh ];
 then
    echo "##### script 1dL downloaded successfully"

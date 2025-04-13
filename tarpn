@@ -521,7 +521,7 @@ fi
 TEMP_PARSE_FILE="/tmp/tarpn/parse.txt";
 
 sudo rm -f $TEMP_PARSE_FILE
-cat /etc/*-release | grep --text "VERSION" | grep --text "22.04.5 LTS (Jammy Jellyfish)" > $TEMP_PARSE_FILE
+cat /etc/*-release | grep --text "VERSION" | grep --text "11 (bullseye)" > $TEMP_PARSE_FILE
 if grep --text -q "VERSION" $TEMP_PARSE_FILE;
 then
         echo -n
