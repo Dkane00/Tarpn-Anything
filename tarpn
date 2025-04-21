@@ -495,7 +495,7 @@ source /usr/local/sbin/test_internet.sh
 if [ $(whoami) != "${USER}" ]; then
    echo "Hello user " $(whoami);
    if [ $(whoami) != "root" ]; then
-      echo "The TARPN script should only be run by user pi"
+      echo "The TARPN script should only be run by NON-ROOT user"
       exit 1
    else
       echo "Be careful starting this script from root.  Only do diagnostics from root!"

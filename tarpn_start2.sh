@@ -21,7 +21,7 @@ sleep 0.5
 #### JESSIE-108  tarpn.log has moved to /var/log/tarpn.log.  Change where we cat the log from.
 #### JESSIE-109  do update and dist-upgrade again, now that the boot firmware has been updated.
 #### JESSIE-110  use com7 for tarpn host instead of com4
-#### JESSIE-111  Put back com4 link to tty8  sudo ln -s /home/pi/minicom/com4 tty8
+#### JESSIE-111  Put back com4 link to tty8  sudo ln -s $HOME/minicom/com4 tty8
 #### STRETCH-001  support for STRETCH
 #### STRETCH-002  turn off systemctl status because that prompted the user for Q and we don't need it.
 #### STRETCH-003  add some -y options to apt-get for updates and upgrades
@@ -169,7 +169,7 @@ echo "#####"
 echo "#####"
 sleep 1
 cd /etc
-sudo ln -s /home/pi/minicom/com4 tty8
+sudo ln -s $HOME/minicom/com4 tty8
 sleep 1
 
 cd ~
@@ -243,7 +243,7 @@ else
    pwd
    echo "/etc/systemd/system directory contains"
    ls -lrats /etc/systemd/system
-   echo "local system /home/pi directory contains"
+   echo "local system $HOME directory contains"
    ls -lrats
    echo " "
    echo "### ERROR801.006:TARPN SERVICE file failed to copy to /etc/system.d/system."
@@ -422,10 +422,10 @@ echo
 echo "#### INSTALL LISTEN APPLICATION"
 echo
 
-cd /home/pi
+cd $HOME
 
 tarpnget listen.zip
-if [ -f /home/pi/listen.zip ];
+if [ -f $HOME/listen.zip ];
 then
    echo " "
 else
@@ -446,7 +446,7 @@ fi
 
 unzip listen.zip
 
-if [ -f /home/pi/listen ];
+if [ -f $HOME/listen ];
 then
    echo " "
 else
@@ -481,11 +481,11 @@ echo
 echo "#### INSTALL LINKTEST APPLICATION"
 echo
 
-cd /home/pi
+cd $HOME
 
 tarpnget linktest.zip
 ##### now neighbor_port_association-service.app should exist in the home directory
-if [ -f /home/pi/linktest.zip ];
+if [ -f $HOME/linktest.zip ];
 then
    echo " "
 else
@@ -506,7 +506,7 @@ fi
 
 unzip linktest.zip
 
-if [ -f /home/pi/linktest-app ];
+if [ -f $HOME/linktest-app ];
 then
    echo " "
 else
@@ -538,11 +538,11 @@ rm linktest.zip
 ############################# INSTALL BBS-CHECKER APPLICATION FROM ZIP FILE
 
 echo "##### Starting get of BBS-CHECKER app"
-cd /home/pi
+cd $HOME
 
 tarpnget bbs_checker.zip
 ##### now bbs_checker.zip should exist in the home directory
-if [ -f /home/pi/bbs_checker.zip ];
+if [ -f $HOME/bbs_checker.zip ];
 then
    echo " "
 else
@@ -564,7 +564,7 @@ fi
 echo "##### received BBS-CHECKER.ZIP file"
 unzip bbs_checker.zip
 
-if [ -f /home/pi/bbs_checker ];
+if [ -f $HOME/bbs_checker ];
 then
    echo " "
 else
@@ -593,12 +593,12 @@ echo
 ############################# INSTALL SENDROUTESTOCQ APPLICATION FROM ZIP FILE
 
 
-cd /home/pi
+cd $HOME
 
 echo "##### Starting get of SENDROUTESTOCQ app"
 tarpnget sendroutestocq.zip
 ##### now sendroutestocq.zip should exist in the home directory
-if [ -f /home/pi/sendroutestocq.zip ];
+if [ -f $HOME/sendroutestocq.zip ];
 then
    echo " "
 else
@@ -620,7 +620,7 @@ echo "##### received SENDROUTESTOCQ.ZIP file"
 
 unzip sendroutestocq.zip
 
-if [ -f /home/pi/sendroutestocq ];
+if [ -f $HOME/sendroutestocq ];
 then
    echo " "
 else
@@ -658,7 +658,7 @@ echo
 
 ###################################################
 echo "#### get ring.wav file for bbs checker "
-cd /home/pi
+cd $HOME
 tarpnget ring.wav
 sudo mv ring.wav /usr/local/sbin/ring.wav
 
@@ -773,7 +773,7 @@ rm -f rx_tarpnstat.sh*
 
 
 ########### UPDATE rx_tarpnstatapp application
-cd /home/pi
+cd $HOME
 echo "ignore the no-process-found missive if printed here:"
 sudo killall rx_tarpnstatapp
 rm -f rx_tarpnstatapp*
@@ -832,15 +832,15 @@ echo "#####"
 
 echo "Install 10K Test loop file "
 ######### Get a 10K test file and put it in the Files folder
-if [ -d /home/pi/bpq/Files ]; then
+if [ -d $HOME/bpq/Files ]; then
    echo "  Files folder already exists"
 else
    echo " Create bpq FILES folder"
-   cd /home/pi/bpq
+   cd $HOME/bpq
    mkdir Files
 fi
 
-cd /home/pi/bpq/Files
+cd $HOME/bpq/Files
 tarpnget g8bpqloop.txt
 echo "Test loop file installed"
 
@@ -943,8 +943,8 @@ sleep 1;
 echo "######"
 sleep 1;
 echo "######"
-echo "tarpn_start2" > /home/pi/tarpn_start2.flag;
-sudo mv /home/pi/tarpn_start2.flag /usr/local/sbin/tarpn_start2.flag;
+echo "tarpn_start2" > $HOME/tarpn_start2.flag;
+sudo mv $HOME/tarpn_start2.flag /usr/local/sbin/tarpn_start2.flag;
 
 TARPNCOMMANDLOGFILE="/var/log/tarpn_command.log"
 
