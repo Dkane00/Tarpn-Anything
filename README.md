@@ -1,6 +1,6 @@
 ## STEP 1
 
-1. Sarting by getting the scrypts to run under any "user" not limited to "pi" user.
+1. Get TARPN install scrypts to run under any "user" not limited to "pi" user.
 - The scripts in the repo will install TARPN on a Raspberry Pi.
 - All the setup steps from the original scripts have been left the same with the exeption of the fallowing:
 
