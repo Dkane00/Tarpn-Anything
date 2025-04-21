@@ -1,5 +1,5 @@
 #!/bin/bash
-#### This script is copyright Tadd Torborg KA2DEW 2014-2023.  All rights reserved.
+#### This script is copyright Tadd Torborg KA2DEW 2014-2025.  All rights reserved.
 ##### Please leave this copyright notice in the document and if changes are made,
 ##### indicate at the copyright notice as to what the intent of the changes was.
 ##### Thanks. - Tadd Raleigh NC
@@ -120,10 +120,11 @@ sleep 1
 ### BULLSEYE 018   10-12-2023  -- bring back bpq_6_0_21_40_mar_2021.zip
 ### BULLSEYE 019   01-01-2024  -- use CONTROL PANEL log instead of PWRMAN log
 ### BULLSEYE 020   03-23-2024  -- use CONTROL PANEL log instead of PWRMAN log
+### BULLSEYE 021   01-26-2025  -- install tarpn-mon
 
 echo "###### version number is:"
 sleep 1
-echo "###### tarpn_start1dl BULLSEYE 020"
+echo "###### tarpn_start1dl BULLSEYE 021"
 
 #### According to this web page: http://wiringpi.com/download-and-install/    Wiring PI is now standard with the Raspbian install.   Note from July 9, 2022
 #### #####
@@ -162,29 +163,29 @@ fi
 _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 
 
-
+###### This is not needed for Tarpn-Anything
 ########## This script is supposed to be called tarpn_start1.sh and should be located in the present working directory.
-#if [ -f tarpn_start1.sh ];
-#then
-#    rm -f tarpn_start1.sh;
-#else
-#        echo "ERROR0: Incorrect calling sequence.  Please see documentation."
-#        echo "ERROR0: Aborting"
-#        exit 1
-#fi
+# if [ -f tarpn_start1.sh ];
+# then
+#     rm -f tarpn_start1.sh;
+# else
+#         echo "ERROR0: Incorrect calling sequence.  Please see documentation."
+#         echo "ERROR0: Aborting"
+#         exit 1
+# fi
 
-####### Make sure we are in the home/pi directory
-#if [ $PWD == $HOME* ];
-#then
-#    rm -f tarpn_start1.sh;
-#else
-#        echo "ERROR0: Incorrect calling sequence.  Please see documentation."
-#        echo "ERROR0: Aborting"
-#        exit 1
-#fi
+# ####### Make sure we are in the home/pi directory
+# if [ $PWD == "$HOME" ];
+# then
+#     rm -f tarpn_start1.sh;
+# else
+#         echo "ERROR0: Incorrect calling sequence.  Please see documentation."
+#         echo "ERROR0: Aborting"
+#         exit 1
+# fi
 
 
-
+cd $HOME/Tarpn-Anything
 if [ -f tarpn_start1dl.sh ];
 then
    echo
@@ -207,8 +208,8 @@ then
    date +%s
    exit 1;
 fi
-date +%s > ${HOME}/datetemp.txt
-sudo mv ${HOME}/datetemp.txt /usr/local/sbin/tarpn_start1dl_starttime.txt
+date +%s > $HOME/datetemp.txt
+sudo mv $HOME/datetemp.txt /usr/local/sbin/tarpn_start1dl_starttime.txt
 echo -n "This SD card is "
 cat /usr/local/sbin/tarpn_start1dl_starttime.txt
 
@@ -223,17 +224,19 @@ sudo apt-get install ftp
 ################ Download the next script.  If we can't get it, then don't proceed with the install.
 sleep 1
 echo -e "\n\n\n\n\n\n"
-echo "##### get TARPN install script #2 to use at next reboot"
+echo "##### check if script #2 is on the system to use at next reboot"
 sleep 1
-#rm -f tarpn_start2.*
-tarpnget tarpn_start2.sh
-if [ -f tarpn_start2.sh ];
+# rm -f tarpn_start2.*
+# tarpnget tarpn_start2.sh
+if [ -f $HOME/Tarpn-Anything/tarpn_start2.sh ];
 then
-   echo "##### script 2 downloaded successfully"
+   echo "##### script 2 is here moving on!!"
    chmod +x tarpn_start2.sh;
    sudo mv tarpn_start2.sh /usr/local/sbin/tarpn_start2.sh;
 else
    echo "ERROR:  Failure retrieving script #2.  Something is wrong"
+   echo "ERROR:  Make sure that you pulled all the install scripts for Tarpn-Anything from the repo"
+   echo "ERROR:  The install scripts should be located in $HOME/Tarpn-Anything for the install to work"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -387,7 +390,7 @@ ls -l /var/log/tarpn*
 
 uptime >> $TARPNCOMMANDLOGFILE
 date >> $TARPNCOMMANDLOGFILE
-echo "tarpn-start1dl.h" >> $TARPNCOMMANDLOGFILE
+echo "tarpn-start1dl.sh" >> $TARPNCOMMANDLOGFILE
 
 #### Disable the console GETTY service
 sudo systemctl stop serial-getty@ttyAMA0.service
@@ -395,8 +398,8 @@ sudo systemctl disable serial-getty@ttyAMA0.service
 sudo sed -i "s^enable_uart=0^enable_uart=1^" /boot/config.txt
 
 
-#### Create a BPQ directory below ${HOME}
-echo "##### create bpq folder below ${HOME}"
+#### Create a BPQ directory below $HOME
+echo "##### create bpq folder below $HOME"
 
 cd ~
 rm -rf bpq
@@ -406,7 +409,7 @@ mkdir bpq
 
 ##### Get RUNBPQ.SH
 echo "##### get RUNBPQ"
-cd ${HOME}
+cd $HOME
 tarpnget runbpq.sh
 if [ -f runbpq.sh ];
 then
@@ -422,7 +425,7 @@ fi
 
 #### Get TEST-INTERNET.SH
 echo "##### get TEST-INTERNET"
-cd ${HOME}
+cd $HOME
 tarpnget test_internet.sh
 if [ -f test_internet.sh ];
 then
@@ -440,7 +443,7 @@ fi
 
 #### Get CONFIGURE_NODE_INI.SH
 echo "##### get CONFIGURE NODE"
-cd ${HOME}/bpq
+cd $HOME/bpq
 tarpnget configure_node_ini.sh
 if [ -f configure_node_ini.sh ];
 then
@@ -456,7 +459,7 @@ fi
 
 #### Get BOILERPLATE.CFG
 echo "##### get BOILERPLATE.CFG"
-cd ${HOME}/bpq
+cd $HOME/bpq
 tarpnget boilerplate.cfg
 if [ -f boilerplate.cfg ];
 then
@@ -471,7 +474,7 @@ fi
 
 #### Get MAKE_LOCAL_BPQ.SH
 echo "##### get MAKE_LOCAL_BPQ.SH"
-cd ${HOME}/bpq
+cd $HOME/bpq
 tarpnget make_local_bpq.sh
 if [ -f make_local_bpq.sh ];
 then
@@ -486,7 +489,7 @@ fi
 
 #### Get CHATCONFIG.CFG
 echo "##### get CHATCONFIG.CFG"
-cd ${HOME}/bpq
+cd $HOME/bpq
 tarpnget chatconfig.cfg
 if [ -f chatconfig.cfg ];
 then
@@ -499,11 +502,12 @@ else
 fi
 
 
-
+#### Tarpn-Anything has a version of the tarpn script that will work for all users not just 'pi'
+#### no need to download the improved version is in the Tarpn-Anything Repo
 ##### Get TARPN
 echo "##### get TARPN script"
-cd ${HOME}
-tarpnget tarpn
+cd $HOME/Tarpn-Anything
+# tarpnget tarpn
 if [ -f tarpn ];
 then
    echo "##### tarpn downloaded successfully"
@@ -511,7 +515,7 @@ then
    sudo mv tarpn /usr/local/sbin/tarpn;
    echo "#####"
 else
-   echo "ERROR:  Failure retrieving testbpq.  Something is wrong"
+   echo "ERROR:  Failure finding tarpn.  Something is wrong"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -521,10 +525,10 @@ fi
 #################################  to verify proper script operation as well as to note when this
 #################################  node software package was brought up.
 echo -e "\n\n\n\n\n\n"
-echo "tarpn_start1dl" > ${HOME}/tarpn_start1dl.flag;
-echo "install date:" >> ${HOME}/tarpn_start1dl.flag;
-date >> ${HOME}/tarpn_start1dl.flag;
-sudo mv ${HOME}/tarpn_start1dl.flag /usr/local/sbin/tarpn_start1dl.flag;
+echo "tarpn_start1dl" > $HOME/tarpn_start1dl.flag;
+echo "install date:" >> $HOME/tarpn_start1dl.flag;
+date >> $HOME/tarpn_start1dl.flag;
+sudo mv $HOME/tarpn_start1dl.flag /usr/local/sbin/tarpn_start1dl.flag;
 
 #### Now download some packages with the apt-get package manager
 sleep 1
@@ -589,7 +593,7 @@ echo "#####"
 uptime
 echo "#####"
 sleep 0.5
-#sudo apt-get -y dist-upgrade
+sudo apt-get -y dist-upgrade
 sleep 0.5
 echo -e "\n\n\n"
 
@@ -699,7 +703,7 @@ sleep 0.5
 echo "#####"
 echo "#####"
 sleep 1
-cd ${HOME}
+cd $HOME
 rm -Rf minicom
 rm -f in*
 mkdir minicom
@@ -741,7 +745,7 @@ else
     echo "      Abort.   Please contact tarpn@groups.io"
     exit 1;
 fi
-cd ${HOME}
+cd $HOME
 
 
 uptime
@@ -775,7 +779,7 @@ echo "##### APT-GET install of VIM editor"
 echo "#####"
 echo "#####"
 sleep 0.5
-#sudo apt-get -y install vim
+sudo apt-get -y install vim
 ###echo "syntax on" > .vimrc
 
 echo
@@ -927,7 +931,7 @@ echo "## check that we are in the update directory where we need to be."
 pwd
 ls -l
 echo "##"
-echo "## now do the move of linbpq and HTMLPages to the ${HOME}/bpq directory"
+echo "## now do the move of linbpq and HTMLPages to the $HOME/bpq directory"
 mv linbpq ~/bpq
 mv HTMLPages ~/bpq/HTML
 echo ###"
@@ -1043,7 +1047,7 @@ echo "##### Get Change Keyboard to US version"
 echo "#####"
 echo "#####"
 cd ~
-#sudo sed -i 's/XKBLAYOUT="gb"/XKBLAYOUT="us"/' /etc/default/keyboard
+sudo sed -i 's/XKBLAYOUT="gb"/XKBLAYOUT="us"/' /etc/default/keyboard
 
 
 
@@ -1140,7 +1144,7 @@ echo "#####"
 echo "#####"
 sleep 1
 sudo mv /dev/tty8 /dev/tty8a
-sudo ln -s ${HOME}/com7 /dev/tty8
+sudo ln -s $HOME/com7 /dev/tty8
 
 ####### W4EIP TRR LINK QUALITY PROGRAM  #######################################################################################
 ####### W4EIP TRR LINK QUALITY PROGRAM  #######################################################################################
@@ -1247,7 +1251,7 @@ if [ -f latest_ninotnc.zip ];
 then
     mkdir temp_latest_ninotnc
     cd temp_latest_ninotnc
-    unzip -q ${HOME}/latest_ninotnc.zip
+    unzip -q $HOME/latest_ninotnc.zip
     rm -rf *MACOSX
     echo -ne "downloaded NinoTNC program file(s): "
     ls -1
@@ -1287,18 +1291,18 @@ echo "#####"
 sleep 1
 ### create TARPN HOME LOGFILE
 HOME_LOGFILE="/var/log/tarpn_home.log"
-echo -ne $(date) "" > ${HOME}/tarpn_home.log
-echo " tarpn-start1dl.sh installing TARPN HOME" >> ${HOME}/tarpn_home.log
-sudo chmod 666 ${HOME}/tarpn_home.log
-sudo mv ${HOME}/tarpn_home.log $HOME_LOGFILE
+echo -ne $(date) "" > $HOME/tarpn_home.log
+echo " tarpn-start1dl.sh installing TARPN HOME" >> $HOME/tarpn_home.log
+sudo chmod 666 $HOME/tarpn_home.log
+sudo mv $HOME/tarpn_home.log $HOME_LOGFILE
 
 
 echo -e "\n\n\n"
-cd ${HOME}
+cd $HOME
 mkdir temporary_home_web_app
 cd temporary_home_web_app
 tarpnget_path_and_filename https://tarpn.net/f TARPN_Home_Latest.zip
-if [ -f ${HOME}/temporary_home_web_app/TARPN_Home_Latest.zip ];
+if [ -f $HOME/temporary_home_web_app/TARPN_Home_Latest.zip ];
 then
    echo "TARPN-HOME has been downloaded"
    echo -ne $(date) "" >> $HOME_LOGFILE
@@ -1339,8 +1343,8 @@ sudo chmod 777 home_web_app
 cd /usr/local/sbin/home_web_app
 
 
-date > ${HOME}/dateinstalled.txt
-sudo mv ${HOME}/dateinstalled.txt .
+date > $HOME/dateinstalled.txt
+sudo mv $HOME/dateinstalled.txt .
 
 if [ -f /usr/local/sbin/home_web_app/dateinstalled.txt ];
 then
@@ -1350,7 +1354,7 @@ else
   exit 1
 fi
 
-sudo mv ${HOME}/temporary_home_web_app/* .
+sudo mv $HOME/temporary_home_web_app/* .
 sudo chown root *
 sudo chmod +r *
 echo -ne "pwd="
@@ -1360,16 +1364,16 @@ echo -ne "pwd="
 pwd
 cd /usr/local/sbin
 sudo chmod 755 home_web_app
-cd ${HOME}
+cd $HOME
 echo -ne "pwd="
 pwd
 
-sudo rm -rf ${HOME}/temporary_home_web_app
+sudo rm -rf $HOME/temporary_home_web_app
 
 #########
 
 
-cd ${HOME}
+cd $HOME
 date > dateinstalled.txt
 
 cd /usr/local/sbin/home_web_app
@@ -1389,8 +1393,8 @@ else
    exit 1
 fi
 
-sudo rm -f ${HOME}/tarpn-home-colors.json
-sudo rm -f ${HOME}/TARPN_Home.ini
+sudo rm -f $HOME/tarpn-home-colors.json
+sudo rm -f $HOME/TARPN_Home.ini
 
 
 echo -e "\n\n\n\n\n\n"
@@ -1435,7 +1439,7 @@ sleep 1
 uptime
 echo -e "\n\n\n\n\n\n"
 echo "##### Install the OS service for TARPN-HOME"
-cd ${HOME}
+cd $HOME
 
 echo "######"
 
@@ -1445,7 +1449,7 @@ if [ -f /etc/systemd/system/home.service ];
 then
    echo "ERROR!  home SERVICE file already existed in /etc/system.d/system."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -1456,7 +1460,7 @@ then
    echo "ERROR!"
    echo "ERROR!  Premature existence of home.service file in home directory"
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io "
+   echo "        please send a message about this to tarpn@groups.io "
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -1471,7 +1475,7 @@ then
 else
    echo "ERROR!  Failed to obtain home_background.sh from the web page."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "   Note: Outputting debug information to be relayed to he who debugs."
    ls -lrat
    pwd
@@ -1487,7 +1491,7 @@ then
 else
    echo "ERROR!  Failed to obtain home-service.txt from the web page."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "   Note: Outputting debug information to be relayed to he who debugs."
    ls -lrat
    pwd
@@ -1538,7 +1542,7 @@ sleep 1
 uptime
 echo -e "\n\n\n\n\n\n"
 echo "##### service script for NEIGHBOR-PORT-ASSOCIATION"
-cd ${HOME}
+cd $HOME
 
 echo "######"
 tarpnget npa.sh
@@ -1561,13 +1565,13 @@ fi
 ######### INSTALL NEIGHBOR-PORT-ASSOCIATION app  ###################################################################
 ######### INSTALL NEIGHBOR-PORT-ASSOCIATION app  ###################################################################
 ######### INSTALL NEIGHBOR-PORT-ASSOCIATION app  ###################################################################
-cd ${HOME}
+cd $HOME
 
 echo "##### INSTALL NEIGHBOR-PORT-ASSOCIATON APP #########"
 
 tarpnget npa.zip
 ##### now neighbor_port_association-service.app should exist in the home directory
-if [ -f ${HOME}/npa.zip ];
+if [ -f $HOME/npa.zip ];
 then
    echo " "
 else
@@ -1580,7 +1584,7 @@ else
    echo "url"
    echo $_source_url
    echo "ERROR4.993!  Failed to obtain npa.zip from the web server."
-   echo "            please send a missive about this to tarpn@groups.io"
+   echo "            please send a message about this to tarpn@groups.io"
    echo "            Include the terminal output from this update."
    echo "ERROR4.993: Aborting"
    exit 1
@@ -1588,7 +1592,7 @@ fi
 
 unzip npa.zip
 
-if [ -f ${HOME}/neighbor_port_association.app ];
+if [ -f $HOME/neighbor_port_association.app ];
 then
    echo " "
 else
@@ -1601,7 +1605,7 @@ else
    echo "url"
    echo $_source_url
    echo "ERROR4.992!  Error in unzipping npa.zip."
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "        Include the terminal output from this update."
    echo "ERROR4.992: Aborting"
    exit 1
@@ -1616,7 +1620,7 @@ then
    echo "##### Neighbor-Port-Assocation APP installed"
 else
    echo "ERROR4.991!  Neighbor-Port-Assocation APP file failed to install."
-   echo "            Please send a missive about this to tarpn@groups.io"
+   echo "            Please send a message about this to tarpn@groups.io"
    echo "            Include the terminal output from this update."
    echo "ERROR4.991: Aborting"
    exit 1;
@@ -1629,7 +1633,7 @@ if [ -f /etc/systemd/system/neighbor_port_association.service ];
 then
    echo "ERROR!  neighbor_port_association SERVICE file already existed in /etc/system.d/system."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -1643,7 +1647,7 @@ then
 else
    echo "ERROR!  Failed to obtain neighbor_port_association-service.txt from the web page."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "   Note: Outputting debug information to be relayed to he who debugs."
    ls -lrat
    pwd
@@ -1664,7 +1668,7 @@ then
 else
    echo "ERROR!  Neighbor-Port-Assocation SERVICE file failed to copy to /etc/system.d/system."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -1678,7 +1682,7 @@ then
 else
    echo "ERROR!  Neighbor-Port-Assocation script file failed to install."
    echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
+   echo "        please send a message about this to tarpn@groups.io"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -1733,11 +1737,11 @@ fi
 tarpnget custom-bpq-commands-services.002
 if [ -f custom-bpq-commands-services.002 ];
 then
-   cp /etc/services ${HOME}/services-copy                                            ## copy the services OS file to our local folder
-   sudo cat ${HOME}/custom-bpq-commands-services.002 >> ${HOME}/services-copy       ## add the /etc/services info for BPQ command extension
-   sudo chown root ${HOME}/services-copy                                             ## make our copy of services look like the original root ownership
-   sudo chgrp root ${HOME}/services-copy                                             ## make our copy of services look like the original root group
-   sudo mv ${HOME}/services-copy /etc/services                                       ## put the new version of services back to the /etc directory where it lives
+   cp /etc/services $HOME/services-copy                                            ## copy the services OS file to our local folder
+   sudo cat $HOME/custom-bpq-commands-services.002 >> $HOME/services-copy       ## add the /etc/services info for BPQ command extension
+   sudo chown root $HOME/services-copy                                             ## make our copy of services look like the original root ownership
+   sudo chgrp root $HOME/services-copy                                             ## make our copy of services look like the original root group
+   sudo mv $HOME/services-copy /etc/services                                       ## put the new version of services back to the /etc directory where it lives
    sudo touch /usr/local/etc/custom-bpq-commands-services.002       ## add the flag-file to tell us not to install this again
    echo "### version 002 BPQ custom commands SERVICES now newly installed"
    echo " "
@@ -1753,10 +1757,10 @@ echo "Install version 004 BPQ custom commands INETD."
 tarpnget custom-bpq-commands-inetd.004
 if [ -f custom-bpq-commands-inetd.004 ];
 then
-   sudo mv ${HOME}/custom-bpq-commands-inetd.004 ${HOME}/inetdconf-copy       ## add the /etc/inetd.conf reconfig info for BPQ command extension
-   sudo chown root ${HOME}/inetdconf-copy                          ## make our copy of services look like the original root ownership
-   sudo chgrp root ${HOME}/inetdconf-copy                          ## make our copy of services look like the original root group
-   sudo mv ${HOME}/inetdconf-copy /etc/inetd.conf                  ## put the new version of inetd.conf back to the /etc directory where it lives
+   sudo mv $HOME/custom-bpq-commands-inetd.004 $HOME/inetdconf-copy       ## add the /etc/inetd.conf reconfig info for BPQ command extension
+   sudo chown root $HOME/inetdconf-copy                          ## make our copy of services look like the original root ownership
+   sudo chgrp root $HOME/inetdconf-copy                          ## make our copy of services look like the original root group
+   sudo mv $HOME/inetdconf-copy /etc/inetd.conf                  ## put the new version of inetd.conf back to the /etc directory where it lives
    sudo touch /usr/local/etc/custom-bpq-commands-inetd.004          ## add the flag-file to tell us not to install this again
    sudo /etc/init.d/xinetd restart                                  ## kick the xinetd service so it uses our new stuff
    echo "### version 004 BPQ custom commands INETD now installed"
@@ -1781,19 +1785,19 @@ echo " "
 
 
 ######### Install the Linux script
-#rm -f ${HOME}/linux.sh
+rm -f $HOME/linux.sh
    tarpnget linux.sh
    chmod +x linux.sh
    sudo chown root linux.sh
-   sudo mv ${HOME}/linux.sh /usr/local/sbin/linux.sh
+   sudo mv $HOME/linux.sh /usr/local/sbin/linux.sh
    sudo touch /usr/local/etc/linux-sh-call.003
    echo "### Installed linux.sh"
-#rm -f ${HOME}/linux.sh
+rm -f $HOME/linux.sh
 
-mkdir ${HOME}/bpq-extensions
+mkdir $HOME/bpq-extensions
 tarpnget sample.sh
 chmod +x sample.sh
-mv sample.sh ${HOME}/bpq-extensions
+mv sample.sh $HOME/bpq-extensions
 
 
 echo " "
@@ -1801,14 +1805,14 @@ echo " "
 echo " "
 
 ######### Install the TINFO script
-#rm -f ${HOME}/tinfo.sh
+rm -f $HOME/tinfo.sh
    tarpnget tinfo.sh
-   chmod +x ${HOME}/tinfo.sh
-   sudo chown root ${HOME}/tinfo.sh
-   sudo mv ${HOME}/tinfo.sh /usr/local/sbin/tinfo.sh
+   chmod +x $HOME/tinfo.sh
+   sudo chown root $HOME/tinfo.sh
+   sudo mv $HOME/tinfo.sh /usr/local/sbin/tinfo.sh
    sudo touch /usr/local/etc/tinfo-sh-call.001
    echo "### Installed tinfo.sh"
-#rm -f ${HOME}/tinfo.sh
+rm -f $HOME/tinfo.sh
 
 
 echo " "
@@ -1816,6 +1820,8 @@ echo " "
 echo " "
 
 ######### Install the NODE-CALLS-LINKTEST application
+echo "Install NODE-CALLS-LINKTEST application"
+echo " "
 sudo rm -f node_calls_linktest.sh*
 
 tarpnget node_calls_linktest.sh
@@ -1827,15 +1833,113 @@ then
     sudo mv node_calls_linktest.sh /usr/local/sbin/node_calls_linktest.sh
     echo "##### NODE_CALLS_LINKTEST script has been installed."
 else
-    echo "ERROR3.003   Something is wrong.  I had access to TARPN server but could"
+    echo "ERROR3.006   Something is wrong.  I had access to TARPN server but could"
     echo "             not acquire the NODE_CALLS_LINKTEST script from TARPN server.  "
     echo "             Abort"
     echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "ERROR. Cound not acquire NODE_CALLS_LINKTEST script from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo "ERROR3.006. Cound not acquire NODE_CALLS_LINKTEST script from TARPN server"  >> $TARPN_COMMAND_LOGFILE
     echo
     echo "##### Aborting"
     exit 1;
 fi
+
+echo
+echo "Install WA2M tarpn-mon application"
+echo
+
+
+cd $HOME
+sudo rm -rf tarpn-mon-install-temp-directory
+mkdir tarpn-mon-install-temp-directory
+cd tarpn-mon-install-temp-directory
+
+sudo rm -rf __MACOSX
+
+#### download a the tarpnmon-runner script
+tarpnget tarpnmon-runner.sh
+if [ -f tarpnmon-runner.sh ];
+then
+    chmod +x tarpnmon-runner.sh
+    sudo mv tarpnmon-runner.sh /usr/local/sbin/tarpnmon-runner.sh
+else
+    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
+    echo "update.sh  ERRORtarpnmonrunners. Cound not acquire tarpnmon-runner script from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo "#### ERRORtarpnmonrunner"
+    echo "#### Something is wrong.  I had access to TARPN server but could"
+    echo "#### not acquire the tarpnmon-runner script from TARPN server.  "
+    echo "#### Abort"
+    exit 1;
+fi
+
+tarpnget tarpn-mon.linux-arm32.zip
+
+if [ -f tarpn-mon.linux-arm32.zip ];
+then
+    unzip tarpn-mon.linux-arm32.zip
+    sudo rm -rf __MACOSX
+    rm -rf tarpn-mon-linux-arm32.zip
+    mv tarpn-mon.linux-arm32 tarpn-mon
+    chmod +x tarpn-mon
+    sudo mv tarpn-mon /usr/local/sbin/tarpn-mon
+    echo -ne "tarpn-mon version = "
+    tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3
+    tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3 > tarpn-mon-version.txt
+    echo " " >> tarpn-mon-version.txt
+    sudo mv tarpn-mon-version.txt /usr/local/etc
+
+    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
+    echo -ne "tarpn-mon version = "  >> $TARPN_COMMAND_LOGFILE
+    tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3  >> $TARPN_COMMAND_LOGFILE
+    echo "##### tarpn-mon app has been installed."
+else
+    echo "ERROR3.007   Something is wrong.  I had access to TARPN server but could"
+    echo "             not acquire the tarpn-mon.linux-arm32.zip from TARPN server.  "
+    echo "             Abort"
+    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
+    echo "ERROR3.007 Cound not acquire tarpn-mon.linux-arm32.zip from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo
+    echo "##### Aborting"
+    exit 1;
+fi
+
+echo
+echo "Get TARPN-MON version statement text file and compare the statement with the application."
+echo
+tarpnget tarpn-mon-version.txt
+
+if [ -f tarpn-mon-version.txt ];
+then
+    echo " " >> tarpn-mon-version.txt
+    echo " " >> tarpn-mon-version.txt
+    DIFF=$(diff -qbZB /usr/local/etc/tarpn-mon-version.txt tarpn-mon-version.txt | wc -c)
+    if [ $DIFF -ne 0 ];
+    then
+        echo "ERROR3.008: tarpn-mon version does NOT match the version file"
+        echo "            stored on the web server.  This is a KA2DEW goof."
+        echo "            Please grab this entire log file and email it to him!"
+        echo -ne "Version from the start1dl-installed-app: "
+        tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3
+        echo -ne "Version downloaded from the web server:  "
+        cat tarpn-mon-version.txt
+        echo " "
+        echo "            I'm sorry for the inconvenience!"
+        exit 1;
+    else
+        rm -rf tarpn-mon-version.txt
+        echo "tarpn-mon application is OK"
+        echo
+    fi
+else
+    echo "ERROR3.009   Something is wrong.  I had access to TARPN server but could"
+    echo "             not acquire the tarpn-mon-version.txt from TARPN server.  "
+    echo "             Abort"
+    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
+    echo "ERROR3.009. Cound not acquire tarpn-mon-version.txt from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo
+    echo "##### Aborting"
+    exit 1;
+fi
+
 
 
 
@@ -1867,7 +1971,7 @@ echo "##### APT-GET DIST-UPGRADE"
 echo "#####"
 echo "#####"
 sleep 1
-#sudo apt-get -y dist-upgrade
+sudo apt-get -y dist-upgrade
 uptime
 
 
