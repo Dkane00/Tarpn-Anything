@@ -175,8 +175,12 @@ sleep 1
 cd ~
 sleep 1
 echo
-echo "##### Turn up the volume to max.  You can adjust amixer cset numid=1 -- 100%  "
-amixer cset numid=1 -- 100%
+echo "##### Turn up the volume to max.  You can adjust with: amixer cset numid=1 -- 100%"
+if command -v amixer &> /dev/null; then
+   amixer cset numid=1 -- 100% 2>/dev/null || amixer set Master 100% 2>/dev/null || echo "Note: Could not set audio volume"
+else
+   echo "amixer not available - skipping audio configuration"
+fi
 echo
 sleep 1
 
@@ -934,10 +938,9 @@ echo "######"
 echo "######"
 echo "######"
 echo "######"
-echo "######      Raspberry PI will now reboot.  All is going well so far."
-echo "######      When we come back up, reconnect and try the   tarpn   command"
-echo "######      as per the"
-echo "######      Set Up Raspberry PI for TARPN Node - Make SDcard"
+echo "######      Your system will now reboot.  All is going well so far."
+echo "######      You can now follow through with the next step"
+echo "######      Set Up Linux System for TARPN Node - Make Installation Media"
 echo "######      web page"
 sleep 1;
 echo "######"

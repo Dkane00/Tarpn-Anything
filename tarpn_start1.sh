@@ -138,7 +138,7 @@ then
    echo
 else
    echo "ERROR:  Help.  I don't know where I am.  Is this tarpn_start1.sh?  "
-   echo "ERROR:  Please start from the /home/pi directory.  Aborting"
+   echo "ERROR:  Please start from the $HOME directory.  Aborting"
    exit 1;
 fi
 
@@ -297,7 +297,7 @@ if [ $_version_ok -ne $_good_result ]; then
     cat /proc/cpuinfo
     echo "----------------------------------------------"
     sleep 1
-    echo "You have an unexpected version of Raspberry PI."
+    echo "You have an unexpected or unsupported hardware platform."
     echo "TARPN is not supported on this version, so far."
     echo "Please contact me, KA2DEW --see QRZ for email addr--,"
     echo "and send me the contents of your"
@@ -314,23 +314,37 @@ then
    echo "OS Version check is bypassed"
 else
    sudo rm -f $temp_parsing_file
-   cat /etc/*-release | grep "VERSION" | grep "11 (bullseye)" > $temp_parsing_file
-   if grep -q "VERSION" $temp_parsing_file;
-   then
-      echo -n "Linux ok: "
-      cat $temp_parsing_file
+   # Check for Debian-based distribution (apt package manager)
+   if command -v apt-get &> /dev/null; then
+      cat /etc/*-release | grep "ID_LIKE" > $temp_parsing_file
+      if grep -q -E "debian|ubuntu" $temp_parsing_file; then
+         echo -n "Linux distribution detected: "
+         cat /etc/*-release | grep "PRETTY_NAME" | cut -d'"' -f2
+      else
+         # If ID_LIKE doesn't contain debian/ubuntu, check ID directly
+         cat /etc/*-release | grep "^ID=" > $temp_parsing_file
+         if grep -q -E "debian|ubuntu|raspbian" $temp_parsing_file; then
+            echo -n "Linux distribution detected: "
+            cat /etc/*-release | grep "PRETTY_NAME" | cut -d'"' -f2
+         else
+            echo -e "\n\nWARNING: This script is designed for Debian-based distributions."
+            echo -e "Detected distribution:"
+            cat /etc/*-release | head -5
+            echo -e "\nYou may encounter issues. Press Ctrl+C to abort or wait 10 seconds to continue...\n"
+            sleep 10
+         fi
+      fi
    else
-      echo -e "\n\nERROR!  This script does not support the Linux version reported in /etc"
-      echo -e "ERROR!  Quitting now\n\n"
-      sleep 1
-      cat /etc/*-release
-      rm -f $temp_parsing_file
-      exit 1
+      echo -e "\n\nWARNING: apt-get not found. This script requires a Debian-based distribution."
+      echo -e "Detected distribution:"
+      cat /etc/*-release | head -5
+      echo -e "\nYou may encounter issues. Press Ctrl+C to abort or wait 10 seconds to continue...\n"
+      sleep 10
    fi
 fi
 rm -f $temp_parsing_file
 
-echo -e "Your Raspberry PI is running the expected Linux version\n\n\n\n"
+echo -e "Your Linux system is compatible with this installation\n\n\n\n"
 
 ###############################################################
 #### See if we have already started installing on this box
@@ -340,7 +354,7 @@ then
     then
         echo "##### Error XX55KK"
         echo "#####  Incomplete installation.  Please start installation again by"
-        echo "#####  using a freshly formatted SDCARD using the Raspberry PI utility."
+        echo "#####  using a freshly formatted SD card or USB drive."
         echo "#####  Please see the:"
         echo "#####  ==Set Up raspberry PI to be a TARPN Node--Make SDCARD=="
         echo "#####  instructions on the builders page of tarpn.net."
@@ -363,7 +377,7 @@ then
         sleep 1
         echo "##### Error XX55CC"
         echo "#####  Incomplete installation.  Please start installation again by"
-        echo "#####  using a freshly formatted SDCARD using the Raspberry PI utility."
+        echo "#####  using a freshly formatted SD card or USB drive."
         echo "#####  Please see the:"
         echo "#####  ==Set Up raspberry PI to be a TARPN Node--Make SDCARD=="
         echo "#####  instructions on the builders page of tarpn.net."
@@ -389,7 +403,7 @@ if [ -f /usr/local/etc/sudoerstest.txt ];
 then
    echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
    echo "ERROR:  have been changed from default.  "
-   echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
+   echo "ERROR:  Please re-image the SD card or drive."
    echo "ERROR:  Make sure to set up 'pi' as the user name, "
    echo "ERROR:  and to automatically log in to desktop."
    echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"

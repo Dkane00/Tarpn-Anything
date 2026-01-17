@@ -174,7 +174,7 @@ _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 #         exit 1
 # fi
 
-# ####### Make sure we are in the home/pi directory
+# ####### Make sure we are in the $HOME directory
 # if [ $PWD == "$HOME" ];
 # then
 #     rm -f tarpn_start1.sh;
@@ -215,6 +215,209 @@ cat /usr/local/sbin/tarpn_start1dl_starttime.txt
 
 source /usr/local/sbin/tarpnget.sh
 source /usr/local/sbin/sleep_with_count.sh
+
+##############################################################################
+#### HARDWARE DETECTION FUNCTIONS - Works on both RPi and x86/x64
+##############################################################################
+
+# Function: Detect and list all available serial ports
+detect_serial_ports() {
+   echo "##### Detecting serial ports on this system..."
+   local serial_ports=""
+   
+   # Check for common serial port patterns
+   for port in /dev/ttyUSB* /dev/ttyACM* /dev/ttyS* /dev/ttyAMA* /dev/serial*; do
+      if [ -e "$port" ]; then
+         # Get additional info if possible
+         local port_info=""
+         if [ -e "/sys/class/tty/$(basename $port)/device" ]; then
+            # Try to get USB device info
+            local usb_info=$(udevadm info -q property -n $port 2>/dev/null | grep -E "ID_VENDOR|ID_MODEL|ID_SERIAL_SHORT" | cut -d'=' -f2 | tr '\n' ' ')
+            if [ -n "$usb_info" ]; then
+               port_info=" ($usb_info)"
+            fi
+         fi
+         echo "  Found: $port$port_info"
+         serial_ports="$serial_ports $port"
+      fi
+   done
+   
+   if [ -z "$serial_ports" ]; then
+      echo "  No serial ports detected. You may need to connect a TNC or USB serial adapter."
+      echo "  Recommended: NinoTNC (purpose-built for TARPN packet radio)"
+      echo "  Alternatives: FTDI FT232, CH340, Prolific PL2303 USB serial adapters"
+   else
+      # Save detected ports to config file
+      echo "$serial_ports" > /tmp/tarpn_detected_serial_ports.txt
+      echo "  Serial ports saved to /tmp/tarpn_detected_serial_ports.txt"
+   fi
+   
+   return 0
+}
+
+# Function: Detect available audio devices
+detect_audio_devices() {
+   echo "##### Detecting audio devices..."
+   
+   if command -v aplay &> /dev/null; then
+      echo "  Available audio playback devices:"
+      aplay -l 2>/dev/null | grep -E "^card|^  " || echo "  No audio devices found"
+      
+      # Get default card
+      local default_card=$(aplay -l 2>/dev/null | grep -m1 "^card" | cut -d: -f1 | cut -d' ' -f2)
+      if [ -n "$default_card" ]; then
+         echo "  Default card: $default_card"
+         echo "$default_card" > /tmp/tarpn_detected_audio_card.txt
+      fi
+   else
+      echo "  aplay not available - will install ALSA utilities later"
+   fi
+   
+   return 0
+}
+
+# Function: Detect temperature sensors
+detect_temperature_sensors() {
+   echo "##### Detecting temperature monitoring capabilities..."
+   
+   # Check for vcgencmd (Raspberry Pi)
+   if command -v vcgencmd &> /dev/null; then
+      echo "  Raspberry Pi temperature monitoring: Available (vcgencmd)"
+      echo "vcgencmd" > /tmp/tarpn_temp_method.txt
+   # Check for thermal zones (generic Linux)
+   elif [ -d /sys/class/thermal ]; then
+      local zone_count=$(ls -d /sys/class/thermal/thermal_zone* 2>/dev/null | wc -l)
+      echo "  Generic thermal zones: Found $zone_count zone(s)"
+      if [ $zone_count -gt 0 ]; then
+         for zone in /sys/class/thermal/thermal_zone*/type; do
+            if [ -f "$zone" ]; then
+               echo "    - $(cat $zone)"
+            fi
+         done
+         echo "thermal_zone" > /tmp/tarpn_temp_method.txt
+      fi
+   fi
+   
+   # Check for lm-sensors (x86/x64)
+   if command -v sensors &> /dev/null; then
+      echo "  lm-sensors: Available (for detailed CPU/motherboard temps)"
+      echo "sensors" >> /tmp/tarpn_temp_method.txt
+   else
+      echo "  Note: Install lm-sensors for enhanced temperature monitoring (optional)"
+      echo "        Command: sudo apt-get install -y lm-sensors"
+   fi
+   
+   return 0
+}
+
+# Function: Detect system architecture and capabilities
+detect_system_capabilities() {
+   echo "##### Detecting system architecture and capabilities..."
+   
+   local arch=$(uname -m)
+   local is_rpi="no"
+   
+   # Detect if running on Raspberry Pi
+   if [ -f /proc/device-tree/model ]; then
+      if grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
+         is_rpi="yes"
+         local rpi_model=$(cat /proc/device-tree/model)
+         echo "  Platform: Raspberry Pi - $rpi_model"
+      fi
+   fi
+   
+   if [ "$is_rpi" = "no" ]; then
+      echo "  Platform: Generic Linux ($arch)"
+      if [ -f /sys/devices/virtual/dmi/id/product_name ]; then
+         local product=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null)
+         local vendor=$(cat /sys/devices/virtual/dmi/id/sys_vendor 2>/dev/null)
+         echo "  System: $vendor $product"
+      fi
+   fi
+   
+   # CPU info
+   local cpu_model=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+   if [ -z "$cpu_model" ]; then
+      cpu_model=$(grep -m1 "Model" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+   fi
+   echo "  CPU: $cpu_model"
+   
+   # Memory
+   local total_mem=$(free -h | grep Mem | awk '{print $2}')
+   echo "  Memory: $total_mem"
+   
+   # Save to config
+   echo "ARCH=$arch" > /tmp/tarpn_system_info.txt
+   echo "IS_RPI=$is_rpi" >> /tmp/tarpn_system_info.txt
+   echo "CPU_MODEL=$cpu_model" >> /tmp/tarpn_system_info.txt
+   
+   return 0
+}
+
+# Function: Detect network interfaces intelligently
+detect_network_interfaces() {
+   echo "##### Detecting network interfaces..."
+   
+   # Find all network interfaces except loopback
+   local interfaces=$(ip -o link show | grep -v "lo:" | awk '{print $2}' | sed 's/://')
+   
+   for iface in $interfaces; do
+      local state=$(ip -o link show $iface | grep -oP "state \K\w+")
+      local mac=$(ip -o link show $iface | grep -oP "link/ether \K[0-9a-f:]+")
+      local ip_addr=$(ip -o -4 addr show $iface 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+      
+      echo "  Interface: $iface"
+      echo "    State: $state"
+      if [ -n "$mac" ]; then
+         echo "    MAC: $mac"
+      fi
+      if [ -n "$ip_addr" ]; then
+         echo "    IP: $ip_addr"
+      fi
+      
+      # Check if wireless
+      if [ -d "/sys/class/net/$iface/wireless" ]; then
+         echo "    Type: Wireless"
+         if command -v iwconfig &> /dev/null; then
+            local ssid=$(iwconfig $iface 2>/dev/null | grep ESSID | cut -d'"' -f2)
+            if [ -n "$ssid" ]; then
+               echo "    SSID: $ssid"
+            fi
+         fi
+      else
+         echo "    Type: Wired"
+      fi
+   done
+   
+   return 0
+}
+
+# Run hardware detection
+echo ""
+echo "##############################################################################"
+echo "#### HARDWARE DETECTION - Detecting capabilities for optimal configuration"
+echo "##############################################################################"
+echo ""
+
+detect_system_capabilities
+echo ""
+detect_serial_ports
+echo ""
+detect_temperature_sensors
+echo ""
+detect_audio_devices
+echo ""
+detect_network_interfaces
+echo ""
+
+echo "##############################################################################"
+echo "#### Hardware detection complete. Configuration saved to /tmp/tarpn_*.txt"
+echo "##############################################################################"
+echo ""
+
+##############################################################################
+#### END HARDWARE DETECTION
+##############################################################################
 
 echo "###### Install ZIP/UNZIP"
 sudo apt-get install zip
@@ -392,10 +595,21 @@ uptime >> $TARPNCOMMANDLOGFILE
 date >> $TARPNCOMMANDLOGFILE
 echo "tarpn-start1dl.sh" >> $TARPNCOMMANDLOGFILE
 
-#### Disable the console GETTY service
-sudo systemctl stop serial-getty@ttyAMA0.service
-sudo systemctl disable serial-getty@ttyAMA0.service
-sudo sed -i "s^enable_uart=0^enable_uart=1^" /boot/config.txt
+#### Disable the console GETTY service (Raspberry Pi specific)
+# On RPi, the serial console may interfere with TARPN serial communication
+if [ -f /boot/config.txt ]; then
+   echo "Raspberry Pi detected - configuring serial port"
+   sudo systemctl stop serial-getty@ttyAMA0.service 2>/dev/null || true
+   sudo systemctl disable serial-getty@ttyAMA0.service 2>/dev/null || true
+   sudo sed -i "s^enable_uart=0^enable_uart=1^" /boot/config.txt 2>/dev/null || true
+else
+   echo "Not running on Raspberry Pi - skipping serial getty and boot config modifications"
+   # On other systems, try to disable serial console on common serial ports
+   for port in ttyS0 ttyUSB0 ttyACM0; do
+      sudo systemctl stop serial-getty@${port}.service 2>/dev/null || true
+      sudo systemctl disable serial-getty@${port}.service 2>/dev/null || true
+   done
+fi
 
 
 #### Create a BPQ directory below $HOME
@@ -925,7 +1139,7 @@ mv *.zip ~/bpq
 echo "## mv to contents of the zip file"
 cd $latest_bpq_zipfile
 echo "##"
-echo "## moved to update directory.  Now moving .zip and linbpq to home/pi/bpq directory"
+echo "## moved to update directory.  Now moving .zip and linbpq to $HOME/bpq directory"
 echo "## Echo the present working directory so them-that-debugs can"
 echo "## check that we are in the update directory where we need to be."
 pwd
@@ -1022,8 +1236,13 @@ fi
 rm -f ringnoises.zip
 sleep 0.5
 
-##### Set volume to max
-amixer sset Master PCM -- -0000
+##### Set volume to max (if amixer is available)
+if command -v amixer &> /dev/null; then
+   echo "Setting audio volume to max"
+   amixer sset Master PCM -- -0000 2>/dev/null || amixer set Master 100% 2>/dev/null || echo "Note: Could not set audio volume"
+else
+   echo "amixer not available - skipping audio configuration"
+fi
 
 
 
@@ -1058,18 +1277,23 @@ uptime
 echo "##### Install TELNET client"
 sleep 0.5
 
-#### In cmdline.txt, stop using tty-async-serial as the console port
+#### In cmdline.txt, stop using tty-async-serial as the console port (RPi only)
 ### before: dwc_otg.lpm_enable=0 console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p6 rootfstype=ext4 elevator=deadline rootwait
 sleep 0.5
 echo -e "\n\n\n\n"
 uptime
 echo "#####"
 echo "#####"
-echo "##### Remove config for having tty-async-serial as console port from /boot/cmdline.txt"
+echo "##### Remove config for having tty-async-serial as console port from /boot/cmdline.txt (RPi only)"
 echo "#####"
 echo "#####"
 sleep 0.5
-sudo sed -i "s~console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 ~~" /boot/cmdline.txt
+if [ -f /boot/cmdline.txt ]; then
+   echo "Raspberry Pi detected - modifying boot cmdline"
+   sudo sed -i "s~console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 ~~" /boot/cmdline.txt
+else
+   echo "Not running on Raspberry Pi - skipping /boot/cmdline.txt modification"
+fi
 ### after: dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p6 rootfstype=ext4 elevator=deadline rootwait
 
 
@@ -1079,11 +1303,16 @@ echo -e "\n\n\n\n"
 uptime
 echo "#####"
 echo "#####"
-echo "##### in /etc/modprobe.d/raspi-blacklist.conf, remove blacklisting of i2c"
+echo "##### in /etc/modprobe.d/raspi-blacklist.conf, remove blacklisting of i2c (RPi only)"
 echo "#####"
 echo "#####"
 sleep 0.5
-sudo sed -i "s~blacklist i2c-bcm2708~~" /etc/modprobe.d/raspi-blacklist.conf
+# Only modify if running on Raspberry Pi
+if [ -f /etc/modprobe.d/raspi-blacklist.conf ]; then
+   sudo sed -i "s~blacklist i2c-bcm2708~~" /etc/modprobe.d/raspi-blacklist.conf
+else
+   echo "Not running on Raspberry Pi - skipping raspi-blacklist.conf modification"
+fi
 
 #### Add i2c-dev to the /etc/modules file
 sleep 1
@@ -1096,7 +1325,10 @@ echo "#####"
 echo "#####"
 sleep 1
 cp /etc/modules modules.work
-echo "i2c-bcm2708" >> modules.work
+# Add RPi-specific i2c module only if on Raspberry Pi
+if [ -f /proc/device-tree/model ] && grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
+   echo "i2c-bcm2708" >> modules.work
+fi
 echo "i2c-dev" >> modules.work
 sudo mv modules.work /etc/modules
 sudo chown root /etc/modules
@@ -1430,6 +1662,28 @@ echo "#####"
 sleep 1
 sudo apt-get install python3-pip
 sudo pip3 install tornado pyserial
+
+echo "#####"
+echo "#####"
+echo "##### Install platform-specific monitoring tools"
+echo "#####"
+sleep 1
+
+# Install lm-sensors for x86/x64 temperature monitoring (optional but recommended)
+if [ ! -f /proc/device-tree/model ] || ! grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
+   echo "##### Detected x86/x64 system - installing lm-sensors for temperature monitoring"
+   sudo apt-get install -y lm-sensors
+   echo "##### Note: Run 'sudo sensors-detect' after installation to configure sensors"
+   echo "##### (You can do this later - it's optional)"
+else
+   echo "##### Raspberry Pi detected - using vcgencmd for temperature monitoring"
+fi
+
+# Install usbutils if not present (for better USB device detection)
+if ! command -v lsusb &> /dev/null; then
+   echo "##### Installing usbutils for USB device detection"
+   sudo apt-get install -y usbutils
+fi
 
 echo "#####"
 echo "#####"
@@ -1987,9 +2241,9 @@ echo "######"
 echo "######"
 echo "######"
 echo "######"
-echo "######      Raspberry PI will now reboot.  All is going well so far."
-echo "######      When we come back up, reconnect and do the command   tarpn"
-echo "######      as per the   Initialize Raspberry PI for TARPN Node    web page"
+echo "######      Your system will now reboot.  All is going well so far."
+echo "######      Please proceed with final installation step"
+echo "######      as per the   Initialize Linux System for TARPN Node    web page"
 sleep 1;
 echo "######"
 

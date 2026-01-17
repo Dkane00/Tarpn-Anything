@@ -964,7 +964,40 @@ then
 
    echo -e "\n\n\n\n\n\n\n\n###########################################################"
    echo "###########################################################"
-   echo "CPU INFO"
+   echo "SYSTEM ARCHITECTURE & CPU INFO"
+   
+   # Detect platform
+   if [ -f /proc/device-tree/model ]; then
+      if grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
+         echo ""
+         echo "Platform: Raspberry Pi"
+         echo "Model: $(cat /proc/device-tree/model)"
+         echo ""
+      fi
+   else
+      echo ""
+      echo "Platform: Generic Linux (x86/x64)"
+      if [ -f /sys/devices/virtual/dmi/id/product_name ]; then
+         echo "System: $(cat /sys/devices/virtual/dmi/id/sys_vendor 2>/dev/null) $(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null)"
+         if [ -f /sys/devices/virtual/dmi/id/bios_version ]; then
+            echo "BIOS Version: $(cat /sys/devices/virtual/dmi/id/bios_version)"
+         fi
+      fi
+      echo ""
+   fi
+   
+   # CPU summary (cross-platform)
+   echo "CPU Summary:"
+   local cpu_model=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+   if [ -z "$cpu_model" ]; then
+      cpu_model=$(grep -m1 "Model" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+   fi
+   echo "  Model: $cpu_model"
+   echo "  Cores: $(nproc)"
+   echo "  Architecture: $(uname -m)"
+   echo ""
+   
+   echo "Detailed CPU Info from /proc/cpuinfo:"
    cat /proc/cpuinfo
 
    echo
@@ -979,8 +1012,13 @@ then
    uname -a
    echo
    echo -e "\n\n\n\n###########################################################"
-   echo "vcgencmd version       GET FIRMWARE VERSION"
-   vcgencmd version
+   # Raspberry Pi specific firmware version (vcgencmd only available on RPi)
+   if command -v vcgencmd &> /dev/null; then
+      echo "vcgencmd version       GET FIRMWARE VERSION (Raspberry Pi)"
+      vcgencmd version
+   else
+      echo "Firmware version: N/A (vcgencmd not available - not running on Raspberry Pi)"
+   fi
 
    echo
    echo -e "\n\n\n\n###########################################################"
@@ -996,13 +1034,103 @@ then
 
    echo -e "\n\n\n\n\n\n\n\n###########################################################"
    echo "###############################################"
-   echo "Raspberry PI Wireless status using iwconfig"
-   iwconfig
+   echo "Wireless status using iwconfig"
+   if command -v iwconfig &> /dev/null; then
+      iwconfig
+   else
+      echo "iwconfig not available. Using ip link:"
+      ip link show
+   fi
 
    echo -e "\n\n\n\n\n\n\n\n###########################################################"
    echo "###############################################"
-   echo "vcgencmd measure_temp        get CPU temperature"
-   vcgencmd measure_temp
+   echo "CPU Temperature"
+   
+   # Try multiple temperature monitoring methods
+   local temp_found=0
+   
+   # 1. Try RPi specific vcgencmd first
+   if command -v vcgencmd &> /dev/null; then
+      echo "Raspberry Pi temperature (vcgencmd):"
+      vcgencmd measure_temp
+      temp_found=1
+   fi
+   
+   # 2. Check for lm-sensors (x86/x64 systems)
+   if command -v sensors &> /dev/null; then
+      echo ""
+      echo "Detailed temperature sensors (lm-sensors):"
+      sensors 2>/dev/null | grep -E "^[A-Za-z]|°C|RPM" || echo "  No sensors data available"
+      temp_found=1
+   fi
+   
+   # 3. Fall back to generic thermal zones
+   if [ -d /sys/class/thermal ]; then
+      echo ""
+      echo "Thermal zones:"
+      for zone in /sys/class/thermal/thermal_zone*/temp; do
+         if [ -f "$zone" ]; then
+            local zone_type=$(cat $(dirname $zone)/type 2>/dev/null)
+            local temp=$(awk '{printf "%.1f°C", $1/1000}' $zone)
+            echo "  $zone_type: $temp"
+            temp_found=1
+         fi
+      done
+   fi
+   
+   # 4. If nothing found
+   if [ $temp_found -eq 0 ]; then
+      echo "CPU temperature monitoring not available on this system"
+      echo "Tip: Install lm-sensors for x86/x64 temperature monitoring:"
+      echo "  sudo apt-get install -y lm-sensors && sudo sensors-detect"
+   fi
+
+   echo -e "\n\n\n\n###########################################################"
+   echo "###############################################"
+   echo "Available Serial Ports (for TARPN communication)"
+   
+   # List all potential serial ports with details
+   echo ""
+   for port in /dev/ttyUSB* /dev/ttyACM* /dev/ttyS* /dev/ttyAMA* /dev/serial*; do
+      if [ -e "$port" ]; then
+         echo "  Port: $port"
+         # Try to get USB device info
+         if command -v udevadm &> /dev/null; then
+            local vendor=$(udevadm info -q property -n $port 2>/dev/null | grep "ID_VENDOR=" | cut -d'=' -f2)
+            local model=$(udevadm info -q property -n $port 2>/dev/null | grep "ID_MODEL=" | cut -d'=' -f2)
+            local serial=$(udevadm info -q property -n $port 2>/dev/null | grep "ID_SERIAL_SHORT=" | cut -d'=' -f2)
+            
+            if [ -n "$vendor" ]; then
+               echo "    Vendor: $vendor"
+            fi
+            if [ -n "$model" ]; then
+               echo "    Model: $model"
+            fi
+            if [ -n "$serial" ]; then
+               echo "    Serial: $serial"
+            fi
+         fi
+         
+         # Check if port is in use
+         if fuser $port &>/dev/null; then
+            echo "    Status: IN USE"
+         else
+            echo "    Status: Available"
+         fi
+         echo ""
+      fi
+   done
+   
+   # If no serial ports found
+   if ! ls /dev/ttyUSB* /dev/ttyACM* /dev/ttyS* /dev/ttyAMA* /dev/serial* &>/dev/null; then
+      echo "  No serial ports detected"
+      echo "  For TARPN packet radio, you need a TNC or USB serial adapter:"
+      echo "    - NinoTNC (recommended - purpose-built for packet radio)"
+      echo "    - FTDI FT232 (excellent for general use)"
+      echo "    - CH340/CH341 (budget option)"
+      echo "    - Prolific PL2303 (older but compatible)"
+      echo ""
+   fi
 
    echo -e "\n\n\n\n###########################################################"
    echo "###############################################"
@@ -1227,9 +1355,17 @@ if [ foo$1 = "foo" ]; then
    then
       cat /sys/class/net/eth0/address > $TEMP_PARSE_FILE
    else
-      cat /sys/class/net/en*/address > $TEMP_PARSE_FILE
+      cat /sys/class/net/en*/address > $TEMP_PARSE_FILE 2>/dev/null || echo "no-ethernet" > $TEMP_PARSE_FILE
    fi
-   vcgencmd measure_temp >> $TEMP_PARSE_FILE
+   # Add CPU temperature if available
+   if command -v vcgencmd &> /dev/null; then
+      vcgencmd measure_temp >> $TEMP_PARSE_FILE
+   elif [ -f /sys/class/thermal/thermal_zone0/temp ]; then
+      echo -n "temp=" >> $TEMP_PARSE_FILE
+      awk '{printf "%.1f'\''C\n", $1/1000}' /sys/class/thermal/thermal_zone0/temp >> $TEMP_PARSE_FILE
+   else
+      echo "temp=N/A" >> $TEMP_PARSE_FILE
+   fi
    sed ':a;N;$!ba;s/\n/   CPU /g' $TEMP_PARSE_FILE > $TEMP_PARSE_FILE2
    if [ -f /usr/local/sbin/tarpn_start1dl_starttime.txt ];
    then
@@ -1585,7 +1721,10 @@ then
       if [ -f ${HOME}/minicom/minicom.scr ];
       then
          echo "##### Starting Minicom for Host -inbound- connection"
-         sudo modprobe snd_bcm2835    #### Turns on audio player so the "RING" will play
+         # Load RPi audio module if available
+         if lsmod | grep -q "snd_bcm2835" || modinfo snd_bcm2835 &>/dev/null; then
+            sudo modprobe snd_bcm2835 2>/dev/null || echo "Note: RPi audio module not available"
+         fi
          cd ${HOME}/minicom          #### Need to be in the proper directory so script is read properly
          ${HOME}/minicom/piminicom -w -D ${HOME}/minicom/com8 -S minicom.scr
          cd ~
@@ -1670,17 +1809,21 @@ if [ $1 = "reboot" ]; then
    echo " ### TARPN REBOOT   commanded"  >> $TARPN_SERVICE_LOG
    sudo touch /forcefsck
    uptime
-   ##echo "0" > /sys/class/gpio/gpio8/value            ##turn off the ports before abandoning them.
-   echo "0" > /sys/class/gpio/gpio9/value
-   echo "0" > /sys/class/gpio/gpio22/value
-   echo "0" > /sys/class/gpio/gpio24/value
-   echo "8" > /sysls/class/gpio/unexport
-   echo "9" > /sys/class/gpio/unexport
-   echo "10" > /sys/class/gpio/unexport
-   echo "11" > /sys/class/gpio/unexport
-   echo "22" > /sys/class/gpio/unexport
-   echo "23" > /sys/class/gpio/unexport
-   echo "24" > /sys/class/gpio/unexport
+   # GPIO cleanup - only on Raspberry Pi
+   if [ -d /sys/class/gpio ]; then
+      echo "Cleaning up GPIO pins (Raspberry Pi hardware detected)"
+      ##echo "0" > /sys/class/gpio/gpio8/value 2>/dev/null || true            ##turn off the ports before abandoning them.
+      echo "0" > /sys/class/gpio/gpio9/value 2>/dev/null || true
+      echo "0" > /sys/class/gpio/gpio22/value 2>/dev/null || true
+      echo "0" > /sys/class/gpio/gpio24/value 2>/dev/null || true
+      echo "8" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "9" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "10" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "11" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "22" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "23" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "24" > /sys/class/gpio/unexport 2>/dev/null || true
+   fi
    sudo shutdown -r now;
    exit 0
 fi
@@ -1693,18 +1836,22 @@ if [ $1 = "shutdown" ]; then
    echo " ### TARPN SHUTDOWN   commanded"  >> $START_STOP_LOGFILE
    sudo touch /forcefsck
    uptime
-   echo "0" > /sys/class/gpio/gpio8/value            ##turn off the ports before abandoning them.
-   echo "0" > /sys/class/gpio/gpio9/value
-   echo "0" > /sys/class/gpio/gpio22/value
-   echo "0" > /sys/class/gpio/gpio24/value
-     echo "8" > /sys/class/gpio/unexport
-     echo "9" > /sys/class/gpio/unexport
-     echo "10" > /sys/class/gpio/unexport
-     echo "11" > /sys/class/gpio/unexport
-     echo "22" > /sys/class/gpio/unexport
-     echo "23" > /sys/class/gpio/unexport
-     echo "24" > /sys/class/gpio/unexport
-     echo "25" > /sys/class/gpio/unexport
+   # GPIO cleanup - only on Raspberry Pi
+   if [ -d /sys/class/gpio ]; then
+      echo "Cleaning up GPIO pins (Raspberry Pi hardware detected)"
+      echo "0" > /sys/class/gpio/gpio8/value 2>/dev/null || true            ##turn off the ports before abandoning them.
+      echo "0" > /sys/class/gpio/gpio9/value 2>/dev/null || true
+      echo "0" > /sys/class/gpio/gpio22/value 2>/dev/null || true
+      echo "0" > /sys/class/gpio/gpio24/value 2>/dev/null || true
+      echo "8" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "9" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "10" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "11" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "22" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "23" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "24" > /sys/class/gpio/unexport 2>/dev/null || true
+      echo "25" > /sys/class/gpio/unexport 2>/dev/null || true
+   fi
    sudo shutdown -h now;
    exit 0
 fi
