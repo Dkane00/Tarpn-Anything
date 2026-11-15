@@ -269,8 +269,10 @@ tarpnget ncpacket-wallpaper.gif
 sudo mv ncpacket-wallpaper.gif /usr/share/rpd-wallpaper
 
 ### get the Version-reader python script
-tarpnget getver.py
-sudo mv getver.py /usr/local/sbin
+### Removed - getver.py is gone from tarpn.net (the server returns its "not found" web page).
+### Upstream dropped this fetch too:  "11-23-2025 Bullseye035 ... Get rid of fetches of get_ver.py."
+# tarpnget getver.py
+# sudo mv getver.py /usr/local/sbin
 
 ### Download files related to automatic operation
 tarpnget tarpn_background.sh
