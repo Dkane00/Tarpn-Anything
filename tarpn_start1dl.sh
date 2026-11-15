@@ -828,7 +828,7 @@ echo -e "\n\n\n"
 sleep 1
 
 ##### Tarpn-Anything: make this CPU type (x86 PC, 64-bit ARM, ...) able to run the TARPN programs
-tarpn_prepare_arch
+tarpn_prepare_arch || exit 1
 sudo apt-get -y install wget file 2>/dev/null
 
 

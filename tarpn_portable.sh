@@ -108,12 +108,12 @@ tarpn_prepare_arch() {
          # Fallback for 64-bit ARM chips that cannot run 32-bit code at all: emulate.
          if ! tarpn_can_run_armhf_natively; then
             echo "  This CPU cannot run 32-bit ARM code natively - installing QEMU emulation"
-            tarpn_install_qemu
+            tarpn_install_qemu || return 1
          fi
          ;;
       x86_64|x86)
          echo "  PC (x86): the 32-bit ARM helper programs will be run through QEMU emulation"
-         tarpn_install_qemu
+         tarpn_install_qemu || return 1
          if [ "$TARPN_ARCH" = "x86_64" ]; then
             # LinBPQ for PCs is a 32-bit Intel program
             sudo dpkg --add-architecture i386 2>/dev/null
@@ -138,9 +138,29 @@ tarpn_install_qemu() {
       sudo mkdir -p /etc/qemu-binfmt
       sudo ln -s /usr/arm-linux-gnueabihf /etc/qemu-binfmt/arm
    fi
-   sudo systemctl restart systemd-binfmt 2>/dev/null || sudo update-binfmts --enable qemu-arm 2>/dev/null
+   # Switch ARM emulation on.  Distros do this two different ways, so do BOTH:
+   #  - binfmt-support (Ubuntu 22.04, Debian 11/12): update-binfmts reads /usr/share/binfmts/qemu-arm
+   #  - systemd-binfmt (newer distros):              reads /usr/lib/binfmt.d/*.conf
+   # (Restarting systemd-binfmt "succeeds" even when it has nothing for qemu, so it must not
+   #  be allowed to skip the update-binfmts step.)
+   if command -v update-binfmts >/dev/null 2>&1 && [ -f /usr/share/binfmts/qemu-arm ]; then
+      sudo update-binfmts --import qemu-arm 2>/dev/null
+      sudo update-binfmts --enable qemu-arm 2>/dev/null
+   fi
+   sudo systemctl restart systemd-binfmt 2>/dev/null
    # libtinfo.so.5 for piminicom (only if we end up using it)
    [ -d /usr/arm-linux-gnueabihf/lib ] && tarpn_fake_tinfo5 /usr/arm-linux-gnueabihf/lib
+   # Make sure it really worked - every ARM TARPN program depends on it
+   if grep -qs '^enabled' /proc/sys/fs/binfmt_misc/qemu-arm; then
+      echo "  QEMU ARM emulation is on."
+   else
+      echo "ERROR:  QEMU ARM emulation is NOT switched on, so the TARPN programs (built for"
+      echo "ERROR:  the Raspberry Pi's ARM chip) cannot run on this PC."
+      echo "ERROR:  Try:   sudo update-binfmts --enable qemu-arm"
+      echo "ERROR:  then check:   cat /proc/sys/fs/binfmt_misc/qemu-arm   (first line should say 'enabled')"
+      echo "ERROR:  and run this install again.  Aborting."
+      return 1
+   fi
 }
 
 # Make libtinfo.so.5 point at libtinfo.so.6 in directory $1, if .5 is missing.
