@@ -684,83 +684,83 @@ _value3APLUS1="9020e0"  #### Raspberry PI 3A+   Tadd June 25, 2023
 _version_ok=0
 _good_result=1
 
-if [ $_value3APLUS1 == $_countb ]; then
+if [ $_value3APLUS1 == "$_countb" ]; then
      echo "PI 3A+ <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
 
 
-if [ $_valuea52082 == $_countb ]; then
+if [ $_valuea52082 == "$_countb" ]; then
      echo "PI 3B Stadium <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_valueZ2W == $_countb ]; then
+if [ $_valueZ2W == "$_countb" ]; then
      echo "PI Zero 2W v1.0 512MB Sony UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value400A == $_countb ]; then
+if [ $_value400A == "$_countb" ]; then
      echo "PI400 Rev 1 4GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
 
 
-if [ $_value4BF == $_countb ]; then
+if [ $_value4BF == "$_countb" ]; then
      echo "type 4 B Rev 1.5 8GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
 
-if [ $_value4BE == $_countb ]; then
+if [ $_value4BE == "$_countb" ]; then
      echo "type 4 B Rev 1.5 4GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value4BD == $_countb ]; then
+if [ $_value4BD == "$_countb" ]; then
      echo "type 4 B Rev 1.5 2GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value4BC == $_countb ]; then
+if [ $_value4BC == "$_countb" ]; then
      echo "type 4 B Rev 1.5 1GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value4BB == $_countb ]; then
+if [ $_value4BB == "$_countb" ]; then
      echo "type 4 B Rev 1.5 2GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value4BA == $_countb ]; then
+if [ $_value4BA == "$_countb" ]; then
      echo "type 4 B Rev 1.4 2GB <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value4B5 == $_countb ]; then
+if [ $_value4B5 == "$_countb" ]; then
      echo "type 4 B v1.2 1GB UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value4B6 == $_countb ]; then
+if [ $_value4B6 == "$_countb" ]; then
      echo "type 4 B v1.2 2GB UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value4B7 == $_countb ]; then
+if [ $_value4B7 == "$_countb" ]; then
      echo "type 4 B v1.2 4GB UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value4B8 == $_countb ]; then
+if [ $_value4B8 == "$_countb" ]; then
      echo "type 4 B v1.4 8GB Sony UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
 
-if [ $_value4B9 == $_countb ]; then
+if [ $_value4B9 == "$_countb" ]; then
      echo "type 4 B Rev 1.4 2GB Sony UK" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
@@ -768,76 +768,76 @@ if [ $_value4B9 == $_countb ]; then
 
 
 
-if [ $_value4B1 == $_countb ]; then
+if [ $_value4B1 == "$_countb" ]; then
      echo "type 4 B 1GB made in UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value4B2 == $_countb ]; then
+if [ $_value4B2 == "$_countb" ]; then
      echo "type 4 B 2GB made in UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value4B4 == $_countb ]; then
+if [ $_value4B4 == "$_countb" ]; then
      echo "type 4 B 4GB made in UK <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value8 == $_countb ]; then
+if [ $_value8 == "$_countb" ]; then
      echo "type 3 B  --bluetooth/wifi  <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value9 == $_countb ]; then
+if [ $_value9 == "$_countb" ]; then
      echo "type 3 B  --bluetooth/wifi  <<<" > ${HOME}/hardware.txt
      _is_raspberry_pi_3=1
      _version_ok=1
     fi
-if [ $_value11 == $_countb ]; then
+if [ $_value11 == "$_countb" ]; then
     echo "type 3 B  Sony Japan <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
-if [ $_value12 == $_countb ]; then
+if [ $_value12 == "$_countb" ]; then
     echo "type 3 B +  England?? <<<" > ${HOME}/hardware.txt
     _is_raspberry_pi_3=1
     _version_ok=1
    fi
 
 if [ $_version_ok -ne $_good_result ]; then
-   if [ $_value0 == $_countb ]; then
+   if [ $_value0 == "$_countb" ]; then
        echo "unknown good HW#0.. tell tadd@mac.com  <<<" > ${HOME}/hardware.txt
        _version_ok=1
        fi
-   if [ $_value1 == $_countb ]; then
+   if [ $_value1 == "$_countb" ]; then
        echo "unknown good HW#1.. tell tadd@mac.com  <<<" > ${HOME}/hardware.txt
        _version_ok=1
        fi
-   if [ $_value2 == $_countb ]; then
+   if [ $_value2 == "$_countb" ]; then
         echo "unknown good HW#2.. tell tadd@mac.com  <<<" > ${HOME}/hardware.txt
         _version_ok=1
         fi
-   if [ $_value3 == $_countb ]; then
+   if [ $_value3 == "$_countb" ]; then
         echo "type B+ V1.2 <<<" > ${HOME}/hardware.txt
        _version_ok=1
        fi
-   if [ $_value4 == $_countb ]; then
+   if [ $_value4 == "$_countb" ]; then
         echo "type 2 B" > ${HOME}/hardware.txt
         _version_ok=1
        fi
-   if [ $_value5 == $_countb ]; then
+   if [ $_value5 == "$_countb" ]; then
         echo "type 2 B v1.1 <<<" > ${HOME}/hardware.txt
         _version_ok=1
        fi
-   if [ $_value6 == $_countb ]; then
+   if [ $_value6 == "$_countb" ]; then
         echo "type B + v2 <<<" > ${HOME}/hardware.txt
         _version_ok=1
        fi
-   if [ $_valueA == $_countb ]; then
+   if [ $_valueA == "$_countb" ]; then
        echo "type 2 B  V1.2 <<<" > ${HOME}/hardware.txt
        _version_ok=1
       fi
-   if [ $_value10 == $_countb ]; then
+   if [ $_value10 == "$_countb" ]; then
        echo "type 2 B (with BCM2837) <<<" > ${HOME}/hardware.txt
        _version_ok=1
       fi
@@ -2882,12 +2882,11 @@ if [ $1 = "home" ]; then
 #   grep getElementById /usr/local/sbin/home_web_app/index.html | grep About | cut -d\> -f4
 
    ###echo "--- tarpn home command -- test for configparser"
-   sudo rm -f ${HOME}/home_test_file.txt
-   dpkg-query -W -f='${binary:Package} ${Version}\t${Maintainer}\n' python-configparser | wc -l  > ${HOME}/home_test_file.txt;
-   _count=$( cat ${HOME}/home_test_file.txt );
-   sudo rm -f ${HOME}/home_test_file.txt
-   _value=1
-   if [ $_value -ne $_count ]; then
+   ### Tarpn-Anything: the original check looked for the Debian package "python-configparser"
+   ### (a Python 2 add-on that newer distros no longer have).  TARPN HOME runs on Python 3, where
+   ### configparser is built in - so just ask TARPN HOME's own Python whether it can load it.
+   _home_py=$(cat /usr/local/etc/tarpn_python.txt 2>/dev/null); _home_py=${_home_py:-python3}
+   if ! $_home_py -c 'import configparser' 2>/dev/null; then
       echo "TARPN COMMAND ERROR802.056:"
       echo "       tarpn home will not run without python-configparser library!"
       echo "       run the command   tarpn updateapps    to fix this. "
