@@ -289,7 +289,7 @@ ssh yourusername@raspberrypi.local
 
 # The second script should run automatically
 # If not, run manually:
-sudo /usr/local/sbin/tarpn_start2.sh
+/usr/local/sbin/tarpn_start2.sh      # run as your normal user, NOT with sudo
 ```
 
 #### Step 5: Final Reboot and Verification
@@ -436,7 +436,7 @@ For TARPN packet radio operation, you'll need a TNC (Terminal Node Controller) o
 # After automatic reboot
 # The second script should run automatically
 # If not, run manually:
-sudo /usr/local/sbin/tarpn_start2.sh
+/usr/local/sbin/tarpn_start2.sh      # run as your normal user, NOT with sudo
 ```
 
 #### Step 8: Verify Installation

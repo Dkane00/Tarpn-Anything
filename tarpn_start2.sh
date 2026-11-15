@@ -4,6 +4,14 @@
 ##### indicate at the copyright notice as to what the intent of the changes was.
 ##### Thanks. - Tadd Raleigh NC
 
+#### Tarpn-Anything: this script must run as the node's normal user (it uses sudo inside where needed).
+#### Started with "sudo", $HOME would be /root and files meant for ~/bpq would land in root's home.
+#### If that happened, quietly re-start this script as the real user.
+if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+   echo "##### tarpn_start2.sh was started with sudo - re-running it as user '$SUDO_USER'"
+   exec sudo -u "$SUDO_USER" -H bash "$0" "$@"
+fi
+
 cd ~
 echo "######"
 sleep 0.5

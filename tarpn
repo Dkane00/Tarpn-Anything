@@ -2372,6 +2372,12 @@ if [ $1 = "test" ]; then
     echo "##### "
     echo "##### "
     echo "##### Starting BPQ Node by calling RUNBPQ.SH"
+    ### Tarpn-Anything: the background service runs the node as root, so it can leave root-owned
+    ### files (bpq32.txt, ...) in ~/bpq.  Running TEST as the user would then hit "Permission denied"
+    ### when rebuilding them.  Give the bpq folder back to this user first.
+    if [ "$(id -u)" -ne 0 ] && [ -d "$HOME/bpq" ]; then
+        sudo chown -R "$(id -un):$(id -gn)" "$HOME/bpq"
+    fi
     source /usr/local/sbin/runbpq.sh;
     echo "##### --- back from RUNBPQ.SH"
     echo -ne $(date) "" >> $START_STOP_LOGFILE

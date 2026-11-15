@@ -132,11 +132,12 @@ tarpn_prepare_arch() {
          echo "  PC (x86): the 32-bit ARM helper programs will be run through QEMU emulation"
          tarpn_install_qemu || return 1
          if [ "$TARPN_ARCH" = "x86_64" ]; then
-            # LinBPQ for PCs is a 32-bit Intel program
+            # LinBPQ for PCs is a 32-bit Intel program.  Its libraries (from ldd):
+            # libc/libm/libpthread/librt (libc6:i386), libgcc_s (libgcc-s1:i386), libz (zlib1g:i386)
             sudo dpkg --add-architecture i386 2>/dev/null
             sudo apt-get -y update
-            sudo apt-get -y install libc6:i386 2>/dev/null \
-               || echo "  WARNING: could not install 32-bit Intel libraries (libc6:i386)"
+            sudo apt-get -y install libc6:i386 libgcc-s1:i386 zlib1g:i386 \
+               || echo "  WARNING: could not install 32-bit Intel libraries (libc6:i386 libgcc-s1:i386 zlib1g:i386)"
          fi
          ;;
       *)
