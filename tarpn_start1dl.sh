@@ -805,6 +805,23 @@ sleep 1
 ###### apt-get update  retrieves a list showing the packages and versions available
 sudo apt-get -y update
 
+############# Tarpn-Anything: programs TARPN uses that Raspberry Pi OS has built in, but other
+############# Debian/Ubuntu/Mint installs (minimal, server, some desktops) may not have.
+#####   unzip          - this installer unzips most of what it downloads
+#####   psmisc         - killall / fuser  (background scripts, tarpn)
+#####   lsof           - tarpn checks whether a serial port is busy
+#####   net-tools      - netstat  (tarpn ports)
+#####   alsa-utils     - aplay   (ring / bad-link sounds from statusmonitor.sh), amixer
+#####   iw             - tarpn_background.sh turns Wi-Fi power-save off
+#####   wireless-tools - iwconfig (tarpn wireless status; falls back to "ip link" without it)
+##### Installed one at a time so a package missing on some distribution doesn't stop the others.
+echo "##### Installing the system programs TARPN needs (if not already present)"
+for _pkg in unzip psmisc lsof net-tools alsa-utils iw wireless-tools; do
+   if ! dpkg-query -W -f='${Status}' $_pkg 2>/dev/null | grep -q "install ok installed"; then
+      sudo apt-get install -y $_pkg || echo "##### NOTE: could not install $_pkg - continuing without it"
+   fi
+done
+
 
 ############# Delete some of the unnecessary bloatware that comes with the Raspbian install
 
@@ -1795,12 +1812,7 @@ if ! command -v lsusb &> /dev/null; then
    sudo apt-get install -y usbutils
 fi
 
-# Install net-tools if not present: "tarpn ports" uses netstat.  Raspberry Pi OS ships it,
-# Ubuntu/Debian/Mint desktops usually don't (the package is called net-tools, not netstat).
-if ! command -v netstat &> /dev/null; then
-   echo "##### Installing net-tools (netstat) for 'tarpn ports'"
-   sudo apt-get install -y net-tools
-fi
+# (net-tools for "tarpn ports" is installed with the other system programs after APT-GET UPDATE)
 
 echo "#####"
 echo "#####"
