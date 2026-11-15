@@ -110,6 +110,12 @@ rm -f ~/tarpn_start1*
 
 source /usr/local/sbin/tarpnget.sh
 source /usr/local/sbin/sleep_with_count.sh
+source /usr/local/sbin/tarpn_portable.sh      # Tarpn-Anything: user/home/CPU portability layer
+echo "##### Installing for user '$TARPN_USER' (home $TARPN_HOME) on a '$TARPN_ARCH' CPU"
+
+# The control-panel GPIO / shutdown-button service only makes sense on a Raspberry Pi
+TARPN_USE_GPIO_SERVICE="no"
+if grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then TARPN_USE_GPIO_SERVICE="yes"; fi
 
 
 ################################### INSTALL TARPN SERVICES
@@ -333,6 +339,20 @@ fi
 echo
 echo
 
+if [ "$TARPN_USE_GPIO_SERVICE" = "yes" ]; then
+# ---- (Raspberry Pi only) ----
+# Tarpn-Anything: pi_shutdown_background.sh sources gpio_for_controlpanel.sh, which the original
+# installers never fetched (only 'tarpn update' did).  Get it first.
+cd ~
+rm -f gpio_for_controlpanel.sh
+tarpnget gpio_for_controlpanel.sh
+if [ -f gpio_for_controlpanel.sh ]; then
+   chmod +x gpio_for_controlpanel.sh
+   sudo mv gpio_for_controlpanel.sh /usr/local/sbin/gpio_for_controlpanel.sh
+else
+   echo "### ERROR: could not get gpio_for_controlpanel.sh from the TARPN server.  Aborting"
+   exit 1
+fi
 echo "######"
 echo "######"
 echo "######"
@@ -414,7 +434,11 @@ else
    echo "ERROR: Aborting"
    exit 1;
 fi
-
+else
+   echo "######"
+   echo "######   Not a Raspberry Pi - skipping the PI SHUTDOWN (GPIO control panel) service"
+   echo "######"
+fi
 
 
 
@@ -821,9 +845,63 @@ fi
 
 sleep 1
 
+###################################################
+######## Tarpn-Anything: programs that the original installers only got from 'tarpn update'
+######## (so a fresh install was missing them):  tarpn-mon service, trr.app, l4listen
 echo "#####"
-echo "##### Install Midori web browser"
-sudo apt install midori -y
+echo "##### Install the TARPN-MON background service"
+cd $HOME
+rm -f tarpn-mon-service.txt tarpn_mon.service
+tarpnget tarpn-mon-service.txt
+if [ -f tarpn-mon-service.txt ] && [ -x /usr/local/sbin/tarpn-mon ]; then
+   mv tarpn-mon-service.txt tarpn_mon.service
+   sudo mv tarpn_mon.service /etc/systemd/system/tarpn_mon.service
+   sudo systemctl daemon-reload
+   sudo systemctl enable tarpn_mon.service
+   sudo systemctl start tarpn_mon.service
+   echo "##### tarpn_mon.service installed"
+else
+   echo "##### WARNING: tarpn-mon service not installed (service file or tarpn-mon program missing)"
+fi
+
+echo "#####"
+echo "##### Install trr.app (route/link-quality tool)"
+cd $HOME
+rm -f trr5.zip trr.app
+tarpnget trr5.zip
+if [ -f trr5.zip ]; then
+   unzip -o trr5.zip
+   if [ -f trr.app ]; then
+      chmod +x trr.app
+      sudo mv trr.app /usr/local/sbin/trr.app
+   else
+      echo "##### WARNING: trr.app was not inside trr5.zip"
+   fi
+   rm -f trr5.zip
+fi
+
+echo "#####"
+echo "##### Install l4listen"
+cd $HOME
+rm -f l4listen.zip l4listen
+tarpnget l4listen.zip
+if [ -f l4listen.zip ]; then
+   unzip -o l4listen.zip
+   if [ -f l4listen ]; then
+      chmod +x l4listen
+      sudo mv l4listen /usr/local/sbin/l4listen
+   fi
+   rm -f l4listen.zip
+fi
+cd $HOME
+
+echo "#####"
+echo "##### Install Midori web browser (optional - only if this OS still offers it)"
+if apt-cache show midori >/dev/null 2>&1; then
+   sudo apt install midori -y
+else
+   echo "##### midori is not available on this OS - skipping (use any browser to open TARPN HOME)"
+fi
 
 sleep 1
 echo "#####"

@@ -110,7 +110,7 @@ doListingOfTncDev() {   # "ttyUSB0"
          echo "    to get app-name."
       else
          #echo "calling get-tnc-version.py"
-         versionnumber=$(python /usr/local/sbin/get_tnc_version.py /dev/$1)
+         versionnumber=$(python3 /usr/local/sbin/get_tnc_version.py /dev/$1)
          exitresult=$?
          if [ $exitresult -eq 0 ] ;
          then
@@ -522,7 +522,8 @@ TEMP_PARSE_FILE="/tmp/tarpn/parse.txt";
 
 sudo rm -f $TEMP_PARSE_FILE
 cat /etc/*-release | grep --text "VERSION" | grep --text "11 (bullseye)" > $TEMP_PARSE_FILE
-if grep --text -q "VERSION" $TEMP_PARSE_FILE;
+# Tarpn-Anything: any Debian/Ubuntu-style Linux is accepted (the installer creates the bypass file)
+if [ -f /usr/local/etc/bypass-platform-checks.txt ] || grep --text -q "VERSION" $TEMP_PARSE_FILE;
 then
         echo -n
 else
@@ -1216,6 +1217,12 @@ then
       sleep 1
       exit 1
    fi
+   # Tarpn-Anything: the upstream updater re-installs the Raspberry-Pi-only (user "pi", 32-bit ARM)
+   # versions of the scripts and would overwrite this portable install.  Refuse.
+   echo "Tarpn-Anything: 'tarpn update' is disabled."
+   echo "The upstream updater would replace this portable install with the Raspberry-Pi-only version."
+   echo "To update, run  git pull  in your Tarpn-Anything folder and see the README."
+   exit 1
    echo "##### UPDATE --  get latest versions of scripts."
    sudo rm -f /usr/local/sbin/update.sh*;
    echo "Checking for Internet access."
@@ -1774,6 +1781,15 @@ then
       exit 1;
    fi
 
+   # Tarpn-Anything: updateapps replaces LinBPQ with the Raspberry-Pi (32-bit ARM) build.  That is
+   # fine on a 32-bit ARM board but would break a PC / 64-bit system that uses another LinBPQ build.
+   case "$(uname -m)" in
+      armv6l|armv7l|armv8l) ;;
+      *)
+         echo "Tarpn-Anything: 'tarpn updateapps' is only supported on 32-bit ARM systems."
+         echo "On this system re-run the installer pieces from the Tarpn-Anything folder instead."
+         exit 1 ;;
+   esac
    sudo rm -f /usr/local/sbin/updateapps.sh*;
    cd ${HOME};
    #wget -o /dev/null $_source_url/updateapps.sh;

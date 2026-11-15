@@ -8,6 +8,26 @@
 
 ---
 
+## Portability layer (any user name, any CPU)
+
+The original TARPN scripts assume user `pi`, home `/home/pi` and a 32-bit ARM Raspberry Pi.
+Tarpn-Anything handles this with `tarpn_portable.sh` (installed to `/usr/local/sbin`):
+
+- **Any user / any home:** the installer records who you are in `/usr/local/etc/tarpn_user.conf`.
+  Every script downloaded from tarpn.net is rewritten on download (`/home/pi` -> your home,
+  `chown pi` -> your user, ...). Systemd services run as root, so real paths are written in, not `$HOME`.
+- **Any CPU:** 32-bit ARM runs everything natively. 64-bit ARM gets the armhf libraries; x86/x86_64
+  gets QEMU user-mode emulation for the ARM-only helper programs plus G8BPQ's Intel LinBPQ.
+- **Repo can live anywhere:** scripts find their own folder; `tarpn` / `tarpn_start2.sh` are *copied*,
+  not moved, so the repo stays complete.
+- **Disabled on purpose:** `tarpn update` (always) and `tarpn updateapps` (non-32-bit-ARM) would
+  re-install the Raspberry-Pi-only upstream versions.
+- **QtTermTCP:** installed for every CPU - the Pi build on ARM, G8BPQ's native Intel build on x86/x86_64.
+- **Known limits:** TARPN HOME ships as Python 3.9 bytecode and needs `python3.9`; the Pi GPIO
+  control-panel service is installed only on a Raspberry Pi.
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)

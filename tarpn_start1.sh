@@ -130,16 +130,28 @@ uptime
 
 
 
-######## CHECK TO MAKE SURE WE'RE REALLY RUNNING THE SCRIPT THIS CODE WAS WRITTEN FOR
-######## AND ALSO THAT WE'RE BEING RUN IN THE DIRECTORY WHERE THE SCRIPT WAS DOWNLOADED TO.
-cd $HOME/Tarpn-Anywhere
-if [ -f tarpn_start1.sh ];
-then
-   echo
-else
-   echo "ERROR:  Help.  I don't know where I am.  Is this tarpn_start1.sh?  "
-   echo "ERROR:  Please start from the $HOME directory.  Aborting"
-   exit 1;
+######## FIND OUT WHERE THIS REPO LIVES (it can be cloned anywhere, under any user name)
+######## AND MAKE SURE ALL THE PIECES OF IT ARE HERE.
+TARPN_SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export TARPN_SRC_DIR
+cd "$TARPN_SRC_DIR" || exit 1
+for _needed in tarpn_start1.sh tarpn_start1dl.sh tarpn_start2.sh tarpn tarpn_portable.sh; do
+   if [ ! -f "$TARPN_SRC_DIR/$_needed" ];
+   then
+      echo "ERROR:  The file $_needed is missing from $TARPN_SRC_DIR"
+      echo "ERROR:  Please get ALL the files of the Tarpn-Anything repo (git clone) and try again.  Aborting"
+      exit 1;
+   fi
+done
+
+######## Load the portability helper, and remember WHICH USER we are installing for
+source "$TARPN_SRC_DIR/tarpn_portable.sh"
+tarpn_record_user || exit 1
+echo "###### Installing TARPN for user '$TARPN_USER' (home $TARPN_HOME) on a '$TARPN_ARCH' system"
+
+#### wget is needed to fetch things from the TARPN web site
+if ! command -v wget &> /dev/null; then
+   sudo apt-get install -y wget
 fi
 
 
@@ -404,8 +416,7 @@ then
    echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
    echo "ERROR:  have been changed from default.  "
    echo "ERROR:  Please re-image the SD card or drive."
-   echo "ERROR:  Make sure to set up 'pi' as the user name, "
-   echo "ERROR:  and to automatically log in to desktop."
+   echo "ERROR:  Any user name is fine, but that user must have sudo rights."
    echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"
    echo "ERROR:  include this error message as well as the following block of data:"
    echo "ERROR:  LS of etc"
@@ -498,6 +509,11 @@ if [ -f tarpnget.sh ];
 then
    echo "##### tarpnget downloaded successfully"
    chmod +x tarpnget.sh;
+   # Tarpn-Anything: after tarpnget.sh is loaded, also load our portability layer so every file
+   # fetched from the TARPN server is re-written for this user/home (instead of 'pi'/'/home/pi').
+   echo 'source /usr/local/sbin/tarpn_portable.sh' >> tarpnget.sh
+   sudo cp "$TARPN_SRC_DIR/tarpn_portable.sh" /usr/local/sbin/tarpn_portable.sh
+   sudo chmod 755 /usr/local/sbin/tarpn_portable.sh
    sudo mv tarpnget.sh /usr/local/sbin/tarpnget.sh
 else
    echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpnget.  Something is wrong"
@@ -527,7 +543,7 @@ sleep 1
 
 # rm -f tarpn_start1dl.sh
 # startget tarpn_start1dl.sh
-cd $HOME/Tarpn-Anything
+cd "$TARPN_SRC_DIR"
 if [ -f tarpn_start1dl.sh ];
 then
    echo "##### script 1dL downloaded successfully"

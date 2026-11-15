@@ -185,7 +185,10 @@ _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 # fi
 
 
-cd $HOME/Tarpn-Anything
+# Tarpn-Anything: the repo can live in any folder, under any user.
+TARPN_SRC_DIR="${TARPN_SRC_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+export TARPN_SRC_DIR
+cd "$TARPN_SRC_DIR"
 if [ -f tarpn_start1dl.sh ];
 then
    echo
@@ -215,6 +218,8 @@ cat /usr/local/sbin/tarpn_start1dl_starttime.txt
 
 source /usr/local/sbin/tarpnget.sh
 source /usr/local/sbin/sleep_with_count.sh
+source /usr/local/sbin/tarpn_portable.sh        # Tarpn-Anything: user/home/CPU portability layer
+echo "##### Installing for user '$TARPN_USER' (home $TARPN_HOME) on a '$TARPN_ARCH' CPU"
 
 ##############################################################################
 #### HARDWARE DETECTION FUNCTIONS - Works on both RPi and x86/x64
@@ -431,15 +436,15 @@ echo "##### check if script #2 is on the system to use at next reboot"
 sleep 1
 # rm -f tarpn_start2.*
 # tarpnget tarpn_start2.sh
-if [ -f $HOME/Tarpn-Anything/tarpn_start2.sh ];
+if [ -f "$TARPN_SRC_DIR/tarpn_start2.sh" ];
 then
    echo "##### script 2 is here moving on!!"
    chmod +x tarpn_start2.sh;
-   sudo mv tarpn_start2.sh /usr/local/sbin/tarpn_start2.sh;
+   sudo cp tarpn_start2.sh /usr/local/sbin/tarpn_start2.sh;
 else
    echo "ERROR:  Failure retrieving script #2.  Something is wrong"
    echo "ERROR:  Make sure that you pulled all the install scripts for Tarpn-Anything from the repo"
-   echo "ERROR:  The install scripts should be located in $HOME/Tarpn-Anything for the install to work"
+   echo "ERROR:  The install scripts should be located in $TARPN_SRC_DIR for the install to work"
    echo "ERROR: Aborting"
    exit 1;
 fi
@@ -597,11 +602,13 @@ echo "tarpn-start1dl.sh" >> $TARPNCOMMANDLOGFILE
 
 #### Disable the console GETTY service (Raspberry Pi specific)
 # On RPi, the serial console may interfere with TARPN serial communication
-if [ -f /boot/config.txt ]; then
+RPI_BOOT_DIR=""
+if [ -f /boot/firmware/config.txt ]; then RPI_BOOT_DIR="/boot/firmware"; elif [ -f /boot/config.txt ]; then RPI_BOOT_DIR="/boot"; fi
+if [ -n "$RPI_BOOT_DIR" ]; then
    echo "Raspberry Pi detected - configuring serial port"
    sudo systemctl stop serial-getty@ttyAMA0.service 2>/dev/null || true
    sudo systemctl disable serial-getty@ttyAMA0.service 2>/dev/null || true
-   sudo sed -i "s^enable_uart=0^enable_uart=1^" /boot/config.txt 2>/dev/null || true
+   sudo sed -i "s^enable_uart=0^enable_uart=1^" $RPI_BOOT_DIR/config.txt 2>/dev/null || true
 else
    echo "Not running on Raspberry Pi - skipping serial getty and boot config modifications"
    # On other systems, try to disable serial console on common serial ports
@@ -720,13 +727,13 @@ fi
 #### no need to download the improved version is in the Tarpn-Anything Repo
 ##### Get TARPN
 echo "##### get TARPN script"
-cd $HOME/Tarpn-Anything
+cd "$TARPN_SRC_DIR"
 # tarpnget tarpn
 if [ -f tarpn ];
 then
    echo "##### tarpn downloaded successfully"
    chmod +x tarpn;
-   sudo mv tarpn /usr/local/sbin/tarpn;
+   sudo cp tarpn /usr/local/sbin/tarpn;
    echo "#####"
 else
    echo "ERROR:  Failure finding tarpn.  Something is wrong"
@@ -819,6 +826,10 @@ echo -e "\n\n\n"
 echo "############# Now start installing things we need. "
 echo -e "\n\n\n"
 sleep 1
+
+##### Tarpn-Anything: make this CPU type (x86 PC, 64-bit ARM, ...) able to run the TARPN programs
+tarpn_prepare_arch
+sudo apt-get -y install wget file 2>/dev/null
 
 
 ## remove nov 30 2021 ##     echo "#####"
@@ -948,6 +959,18 @@ else
     exit 1;
 fi
 chmod +x piminicom
+##### Tarpn-Anything: piminicom is a 32-bit ARM program.  On other CPUs make sure it really starts;
+##### if not, fall back to the stock minicom package (works, but without G8BPQ's bell-sound patch).
+if [ "$TARPN_ARCH" != "arm32" ]; then
+   if ./piminicom -v >/dev/null 2>&1; then
+      echo "##### piminicom runs on this system"
+   else
+      echo "##### piminicom will not start on this system - using stock minicom instead"
+      echo "#####   (everything works except the bell/ring sound)"
+      mv piminicom piminicom.arm
+      ln -s "$(command -v minicom)" piminicom
+   fi
+fi
 tarpnget minicom.scr
 if [ -f minicom.scr ];
 then
@@ -1116,6 +1139,21 @@ then
    echo "## Rename to linbpq and make it executable ##"
    cp $latest_bpq_file linbpq
    chmod +x linbpq
+   if [ "$TARPN_ARCH" = "x86_64" ] || [ "$TARPN_ARCH" = "x86" ]; then
+      # The zip only holds the Raspberry-Pi (ARM) build.  PCs need G8BPQ's Intel build of LinBPQ.
+      echo "## PC detected - downloading the Intel build of LinBPQ from G8BPQ's site"
+      rm -f linbpq.intel
+      wget -q -O linbpq.intel http://www.cantab.net/users/john.wiseman/Downloads/Beta/linbpq
+      if [ -s linbpq.intel ] && head -c 4 linbpq.intel | grep -q "ELF"; then
+         cp linbpq.intel linbpq
+         chmod +x linbpq
+         echo "## Using the Intel (x86) LinBPQ"
+      else
+         echo "## WARNING: could not get the Intel LinBPQ.  Falling back to the ARM LinBPQ through QEMU emulation."
+         echo "##          (it will run, but raw-socket features may not work)"
+      fi
+      rm -f linbpq.intel
+   fi
    pwd
    ls -lrat *nbpq
 else
@@ -1178,10 +1216,51 @@ echo "##### Get PiTermBpq"
 echo "#####"
 echo "#####"
 cd ~
-tarpnget piqttermtcp.dms
-if [ -f piqttermtcp.dms ];
+mkdir -p ~/Desktop
+##### Tarpn-Anything: pick the QtTermTCP build that matches this CPU.
+#####   32-bit ARM / 64-bit ARM : the Raspberry Pi build from the TARPN server (piqttermtcp.dms)
+#####   x86_64 PC               : G8BPQ's 64-bit Intel build (QtTermTCP64)
+#####   x86 (32-bit) PC         : G8BPQ's 32-bit Intel build (QtTermTCP)
+QTTERM_SITE="http://www.cantab.net/users/john.wiseman/Downloads"
+QTTERM_FILE=""
+case "$TARPN_ARCH" in
+   x86_64) QTTERM_FILE="QtTermTCP64" ;;
+   x86)    QTTERM_FILE="QtTermTCP" ;;
+esac
+
+echo "##### Installing the Qt5 libraries QtTermTCP needs"
+if [ "$TARPN_ARCH" = "arm64" ]; then
+   sudo apt-get -y install libqt5widgets5:armhf libqt5network5:armhf libqt5gui5:armhf libqt5core5a:armhf 2>/dev/null || true
+elif [ -n "$QTTERM_FILE" ]; then
+   # Ubuntu 24.04+ renamed some of these with a "t64" suffix - try both names
+   for _pkg in libqt5widgets5 libqt5network5 libqt5gui5 libqt5core5a libqt5multimedia5 libqt5serialport5; do
+      sudo apt-get -y install ${_pkg}t64 2>/dev/null || sudo apt-get -y install ${_pkg} 2>/dev/null \
+         || echo "##### WARNING: could not install $_pkg"
+   done
+   sudo apt-get -y install libgl1 2>/dev/null || true
+fi
+
+if [ -n "$QTTERM_FILE" ]; then
+   rm -f piqttermtcp
+   wget -q -O piqttermtcp "$QTTERM_SITE/$QTTERM_FILE"
+   if [ -s piqttermtcp ] && head -c 4 piqttermtcp | grep -q "ELF"; then
+      echo "##### Got $QTTERM_FILE (Intel build of QtTermTCP)"
+      QTTERM_GOT=1
+   else
+      echo "ERROR41.1 Could not download $QTTERM_FILE from $QTTERM_SITE"
+      echo "##### Aborting"
+      exit 1;
+   fi
+else
+   tarpnget piqttermtcp.dms
+   if [ -f piqttermtcp.dms ]; then
+      mv piqttermtcp.dms piqttermtcp
+      QTTERM_GOT=1
+   fi
+fi
+
+if [ -n "$QTTERM_GOT" ] && [ -f piqttermtcp ];
 then
-    mv piqttermtcp.dms piqttermtcp
     chmod +x piqttermtcp
     mv piqttermtcp ~/Desktop/qt-term
     tarpnget QtTermTCP.ini
@@ -1288,9 +1367,11 @@ echo "##### Remove config for having tty-async-serial as console port from /boot
 echo "#####"
 echo "#####"
 sleep 0.5
-if [ -f /boot/cmdline.txt ]; then
+CMDLINE_FILE=""
+if [ -f /boot/firmware/cmdline.txt ]; then CMDLINE_FILE="/boot/firmware/cmdline.txt"; elif [ -f /boot/cmdline.txt ]; then CMDLINE_FILE="/boot/cmdline.txt"; fi
+if [ -n "$CMDLINE_FILE" ]; then
    echo "Raspberry Pi detected - modifying boot cmdline"
-   sudo sed -i "s~console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 ~~" /boot/cmdline.txt
+   sudo sed -i "s~console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 ~~" $CMDLINE_FILE
 else
    echo "Not running on Raspberry Pi - skipping /boot/cmdline.txt modification"
 fi
@@ -1637,31 +1718,20 @@ echo "##### Install Python-dev, pyserial, and python-serial"
 
 
 echo "#####"
-echo "##### Get telnetlib3"
-echo "#####"
-sudo pip install telnetlib3
-
-echo "#####"
-echo "##### PIP install of singledispatch and backports_abc"
+echo "##### Install the Python modules TARPN HOME needs (works on old and new Debian/Ubuntu/Raspberry Pi OS)"
 echo "#####"
 sleep 1
-sudo python -m pip install singledispatch backports_abc
+sudo apt-get install -y python3 python3-pip python3-serial python3-tornado
+# telnetlib3: use the distro package if there is one, otherwise pip.
+# New distros refuse plain "pip install" system-wide (PEP 668), hence --break-system-packages.
+sudo apt-get install -y python3-telnetlib3 2>/dev/null \
+   || sudo pip3 install telnetlib3 2>/dev/null \
+   || sudo pip3 install --break-system-packages telnetlib3
+# Old Python-2 helper modules from the original Raspberry Pi 'Bullseye' install - only if still available
+sudo apt-get install -y python-configparser 2>/dev/null || true
 
-
-echo "#####"
-echo "##### APT-GET install of python-configparser"
-echo "#####"
-sleep 1
-sudo apt-get install -y python-configparser
-sudo apt-get install -y python-configparser
-
-uptime
-echo "#####"
-echo "##### APT-GET install of python-tornado"
-echo "#####"
-sleep 1
-sudo apt-get install python3-pip
-sudo pip3 install tornado pyserial
+# TARPN HOME ships as Python 3.9 bytecode (.pyc), which only runs on Python 3.9 exactly.
+tarpn_ensure_python39
 
 echo "#####"
 echo "#####"
