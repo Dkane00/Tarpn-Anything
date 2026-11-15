@@ -14,6 +14,8 @@ fi
 
 cd ~
 echo "######"
+uptime
+echo "######"
 sleep 0.5
 echo "######"
 sleep 0.5
@@ -72,8 +74,14 @@ sleep 0.5
 #### 01-01-2024 BULLSEYE-027  Use CONTROL_PANEL log instead of PWRMAN log
 #### 02-02-2024 BULLSEYE-028  download and install getver.py to read the NinoTNC version
 #### 03-01-2025 BULLSEYE-029  Fix bug where getver.py was installed in /usr/tarpn/sbin instead of /usr/local/sbin
+#### 06-06-2025 BULLSEYE-030  Use the same define for TARPNCOMMANDLOG in every script file that refers to that log file.
+#### 10-09-2025 BULLSEYE-031  Add a bunch of "uptime" calls to show how long this script takes to run
+#### 10-18-2025 BULLSEYE-032  Add downloading of gpio_for_controlpanel.sh.  Add error reporting for pi_shutdown_background fail-to-download.
+#### 11-22-2025 BULLSEYE-033  Fix undefined STARTOPlogfile at the end of the script.
+#### 11-22-2025 BULLSEYE-034  Get rid of unneeded UPDATE code for rx_tarpnstat
+#### 11-23-2025  Bullseye035  define the log file for STARTSTOP.  Get rid of fetches of get_ver.py.
 
-echo "###### =TARPN START 2 BULLSEYE 029" #=  --VERSION--#########
+echo "######tarpn_start2              Bullseye035" #  --VERSION--#########
 
 
 sleep 0.5
@@ -236,13 +244,13 @@ fi
 
 
 
-
-STARTSTOPLOGFILE="/var/log/tarpn_startstop.log"
+TARPNCOMMANDLOGFILE="/var/log/tarpn_command.log"
 SERVICELOGFILE="/var/log/tarpn_service.log"
 TARPN_CONTROL_PANEL_LOGFILE="/var/log/tarpn_control_panel.log"
+START_STOP_LOGFILE="/var/log/tarpn_startstop.log"
 
-echo -ne $(date) " " >> $STARTSTOPLOGFILE
-echo "New TARPN install in progress - running tarpn-start2.sh" >> $STARTSTOPLOGFILE
+echo -ne $(date) " " >> $START_STOP_LOGFILE
+echo "New TARPN install in progress - running tarpn-start2.sh" >> $START_STOP_LOGFILE
 
 echo -ne $(date) " " >> $SERVICELOGFILE
 echo "New TARPN install in progress - running tarpn-start2.sh" >> $SERVICELOGFILE
@@ -271,16 +279,15 @@ else
    exit 1;
 fi
 
+uptime
 
 ### get the desktop/wallpaper image for ncpacket
 tarpnget ncpacket-wallpaper.gif
 sudo mv ncpacket-wallpaper.gif /usr/share/rpd-wallpaper
 
 ### get the Version-reader python script
-### Removed - getver.py is gone from tarpn.net (the server returns its "not found" web page).
-### Upstream dropped this fetch too:  "11-23-2025 Bullseye035 ... Get rid of fetches of get_ver.py."
-# tarpnget getver.py
-# sudo mv getver.py /usr/local/sbin
+### no longer a thing # tarpnget getver.py
+### no longer a thing # sudo mv getver.py /usr/local/sbin
 
 ### Download files related to automatic operation
 tarpnget tarpn_background.sh
@@ -295,6 +302,7 @@ echo "BACKGROUND:OFF" > ~/background.ini
 sudo mv ~/background.ini /usr/local/etc/background.ini
 sudo chown root /usr/local/etc/background.ini
 
+uptime
 ### Start TARPN service from the OS
 echo "##### TARPN SERVICE file installed"
 sudo systemctl daemon-reload
@@ -351,23 +359,13 @@ echo
 
 if [ "$TARPN_USE_GPIO_SERVICE" = "yes" ]; then
 # ---- (Raspberry Pi only) ----
-# Tarpn-Anything: pi_shutdown_background.sh sources gpio_for_controlpanel.sh, which the original
-# installers never fetched (only 'tarpn update' did).  Get it first.
-cd ~
-rm -f gpio_for_controlpanel.sh
-tarpnget gpio_for_controlpanel.sh
-if [ -f gpio_for_controlpanel.sh ]; then
-   chmod +x gpio_for_controlpanel.sh
-   sudo mv gpio_for_controlpanel.sh /usr/local/sbin/gpio_for_controlpanel.sh
-else
-   echo "### ERROR: could not get gpio_for_controlpanel.sh from the TARPN server.  Aborting"
-   exit 1
-fi
+# Tarpn-Anything: we used to fetch gpio_for_controlpanel.sh here ourselves; upstream Bullseye032
+# now fetches it below (needed by pi_shutdown_background.sh), so ours was removed.
 echo "######"
 echo "######"
 echo "######"
 echo "######   PI SHUTDOWN SERVICE"
-echo "######  Adding service for raspberry pi automatic shutdown and UP notification"
+echo "######  Adding service for control-panel/powerman and other Linux reboot related operations"
 echo "######"
 sleep 1
 echo "########"
@@ -398,28 +396,57 @@ tarpnget pi_shutdown-service.txt
 ##### now pi_shutdown-service.txt  should exist in the home directory
 if [ -f ~/pi_shutdown-service.txt ];
 then
-   echo "got PI_SHUTDOWN-SERVICE.TXT"
+    echo "got PI_SHUTDOWN-SERVICE.TXT"
+    mv pi_shutdown-service.txt pi_shutdown.service
+    sudo mv ~/pi_shutdown.service /etc/systemd/system/pi_shutdown.service
 else
-   echo "### ERROR801.010:Failed to obtain pi_shutdown.service from the web page."
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io"
-   echo "###        Note: Outputting debug information to be relayed to support."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR: Aborting"
-   exit 1
+    echo "### ERROR801.010:Failed to obtain pi_shutdown.service from the web page."
+    echo "###              If you got this message during a clean install, then"
+    echo "###              please send a missive about this to tarpn@groups.io"
+    echo "###        Note: Outputting debug information to be relayed to support."
+    ls -lrat
+    pwd
+    echo "url"
+    echo $_source_url
+    echo "ERROR: Aborting"
+    exit 1
 fi
 
-mv pi_shutdown-service.txt pi_shutdown.service
-sudo mv ~/pi_shutdown.service /etc/systemd/system/pi_shutdown.service
+
+
+
 if [ -f /etc/systemd/system/pi_shutdown.service ];
 then
 ### Download files related to automatic operation
-   tarpnget pi_shutdown_background.sh
-   chmod +x pi_shutdown_background.sh
-   sudo mv pi_shutdown_background.sh /usr/local/sbin
+    tarpnget gpio_for_controlpanel.sh
+    if [ -f ~/gpio_for_controlpanel.sh ];
+    then
+        echo "Got gpio_for_controlpanel.sh"
+        chmod +x gpio_for_controlpanel.sh
+        sudo mv gpio_for_controlpanel.sh /usr/local/sbin
+    else
+        echo "### ERROR801.011A:gpio_for_controlpanel file failed to download"
+        echo "        Please try your install procedure again from the Imager."
+        echo "        It is possible we're having some issue with the server."
+        echo "        If this fails twice, report this message at tarpn@groups.io"
+        echo "ERROR: Aborting"
+        exit 1;
+    fi
+
+    tarpnget pi_shutdown_background.sh
+    if [ -f ~/pi_shutdown_background.sh ];
+    then
+        echo "Got pi_shutdown_background.sh"
+        chmod +x pi_shutdown_background.sh
+        sudo mv pi_shutdown_background.sh /usr/local/sbin
+    else
+        echo "### ERROR801.011C:pi_shutdown_background file failed to download"
+        echo "        Please try your install procedure again from the Imager."
+        echo "        It is possible we're having some issue with the server."
+        echo "        If this fails twice, report this message at tarpn@groups.io"
+        echo "ERROR: Aborting"
+        exit 1;
+    fi
 
 
 ### Start SHUTDOWN service from the OS
@@ -450,6 +477,7 @@ else
    echo "######"
 fi
 
+uptime
 
 
 ########### INSTALL LISTEN Application ###########################################3
@@ -630,6 +658,7 @@ echo
 
 ############################# INSTALL SENDROUTESTOCQ APPLICATION FROM ZIP FILE
 
+uptime
 
 cd $HOME
 
@@ -810,12 +839,7 @@ rm -f rx_tarpnstat.service*
 rm -f rx_tarpnstat.sh*
 
 
-########### UPDATE rx_tarpnstatapp application
 cd $HOME
-echo "ignore the no-process-found missive if printed here:"
-sudo killall rx_tarpnstatapp
-rm -f rx_tarpnstatapp*
-
 
 echo "###### Install rx_tarpnstatapp"
 
@@ -825,8 +849,8 @@ then
     echo "##### received rx_tarpnstatapp  zip file"
     unzip rx_tarpnstatapp.zip
 else
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "### ERROR801.046:tarpn-start2.sh: rx_tarpnstatapp.zip not available from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
+    echo "### ERROR801.046:tarpn-start2.sh: rx_tarpnstatapp.zip not available from TARPN server"  >> $TARPNCOMMANDLOGFILE
     pwd
     ls -lrats
     echo "###              Did not receive rx_tarpnstatapp.zip file.  FAIL FAIL FAIL"
@@ -843,8 +867,8 @@ then
     sudo mv rx_tarpnstatapp /usr/local/sbin/rx_tarpnstatapp
     echo -e "##### rx_tarpnstatapp application has been updated.\n"
 else
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "### ERROR801.051:tarpn-start2.sh: rx_tarpnstatapp not available from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
+    echo "### ERROR801.051:tarpn-start2.sh: rx_tarpnstatapp not available from TARPN server"  >> $TARPNCOMMANDLOGFILE
     pwd
     ls -lrats
     echo "### ERROR801.053:Unable to unzip rx_tarpnstatapp!  FAIL FAIL FAIL"
@@ -852,28 +876,14 @@ else
     echo "##### Abort -- complain to tarpn@groups.io."
     exit 1
 fi
+uptime
 
 sleep 1
 
 ###################################################
 ######## Tarpn-Anything: programs that the original installers only got from 'tarpn update'
-######## (so a fresh install was missing them):  tarpn-mon service, trr.app, l4listen
-echo "#####"
-echo "##### Install the TARPN-MON background service"
-cd $HOME
-rm -f tarpn-mon-service.txt tarpn_mon.service
-tarpnget tarpn-mon-service.txt
-if [ -f tarpn-mon-service.txt ] && [ -x /usr/local/sbin/tarpn-mon ]; then
-   mv tarpn-mon-service.txt tarpn_mon.service
-   sudo mv tarpn_mon.service /etc/systemd/system/tarpn_mon.service
-   sudo systemctl daemon-reload
-   sudo systemctl enable tarpn_mon.service
-   sudo systemctl start tarpn_mon.service
-   echo "##### tarpn_mon.service installed"
-else
-   echo "##### WARNING: tarpn-mon service not installed (service file or tarpn-mon program missing)"
-fi
-
+######## (so a fresh install was missing them):  trr.app, l4listen
+######## (the tarpn-mon service used to be here too; upstream tarpn_start1dl Bullseye023 installs it now)
 echo "#####"
 echo "##### Install trr.app (route/link-quality tool)"
 cd $HOME
@@ -936,6 +946,7 @@ cd $HOME/bpq/Files
 tarpnget g8bpqloop.txt
 echo "Test loop file installed"
 
+uptime
 sleep 1
 echo "#####"
 
@@ -949,8 +960,8 @@ if [ -f g8bpq_link_stress.zip ];
 then
    echo " "
 else
-   echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-   echo "### ERROR801.061:Error in downloading g8bpq_link_stress.zip"  >> $TARPN_COMMAND_LOGFILE
+   echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
+   echo "### ERROR801.061:Error in downloading g8bpq_link_stress.zip"  >> $TARPNCOMMANDLOGFILE
    resume_services
    echo "   Note: Outputting debug information to be relayed to he who debugs."
    echo "   Note: Outputting debug information to be relayed to he who debugs."
@@ -976,8 +987,8 @@ then
    echo "##### unzip successful.  Moving g8bpq_link_stress.py sbin"
    sudo mv g8bpq_link_stress.py /usr/local/sbin/g8bpq_link_stress.py
 else
-   echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-   echo "### ERROR801.065.  Error in unzip of g8bpq_link_stress.zip"  >> $TARPN_COMMAND_LOGFILE
+   echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
+   echo "### ERROR801.065.  Error in unzip of g8bpq_link_stress.zip"  >> $TARPNCOMMANDLOGFILE
    resume_services
    echo "   Note: Outputting debug information to be relayed to support."
    echo "   Note: Outputting debug information to be relayed to support."
@@ -1005,6 +1016,7 @@ fi
 
 
 sleep 1
+uptime
 echo "#####"
 sleep 1
 echo "##### Done.  After reboot you will be ready to test and/or "
@@ -1021,7 +1033,6 @@ rm -f sendroutestocq.zip
 rm -f test.txt
 rm -f parse.tmp
 
-sleep 1;
 echo "######"
 echo "######"
 echo "######"
@@ -1030,24 +1041,23 @@ echo "######      Your system will now reboot.  All is going well so far."
 echo "######      You can now follow through with the next step"
 echo "######      Set Up Linux System for TARPN Node - Make Installation Media"
 echo "######      web page"
-sleep 1;
 echo "######"
-sleep 1;
 echo "######"
 echo "tarpn_start2" > $HOME/tarpn_start2.flag;
 sudo mv $HOME/tarpn_start2.flag /usr/local/sbin/tarpn_start2.flag;
 
 TARPNCOMMANDLOGFILE="/var/log/tarpn_command.log"
-
+STARTSTOPLOGFILE="/var/log/tarpn_startstop.log"
 uptime >> $TARPNCOMMANDLOGFILE
 echo -ne $(date) " " >> $TARPNCOMMANDLOGFILE
 echo "New TARPN install2 completed - rebooting in 4 seconds" >> $TARPNCOMMANDLOGFILE
 
-echo -ne $(date) " " >> $STARTSTOPLOGFILE
-echo "New TARPN install2 completed - rebooting in 4 seconds" >> $STARTSTOPLOGFILE
+echo -ne $(date) " " >> $START_STOP_LOGFILE
+echo "New TARPN install2 completed - rebooting in 4 seconds" >> $START_STOP_LOGFILE
 
 ###### REBOOT in 5 seconds
 sleep_with_count_5
 sudo touch /forcefsck
+uptime
 sudo shutdown -r now;
 exit 0

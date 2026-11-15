@@ -25,6 +25,10 @@ Tarpn-Anything handles this with `tarpn_portable.sh` (installed to `/usr/local/s
 - **QtTermTCP:** installed for every CPU - the Pi build on ARM, G8BPQ's native Intel build on x86/x86_64.
 - **Known limits:** TARPN HOME ships as Python 3.9 bytecode and needs `python3.9`; the Pi GPIO
   control-panel service is installed only on a Raspberry Pi.
+- **Based on upstream:** the tarpn.net `bullseye2021` scripts as of 2026-11-15 - `tarpn_start1`
+  Bullseye023, `tarpn_start1dl` Bullseye026, `tarpn_start2` Bullseye035, `tarpn` Bullseye186.
+  To sync again, 3-way merge from the previous upstream copy; watch for upstream `/home/pi` lines
+  that merge in silently where we use `${HOME}`.
 
 ---
 

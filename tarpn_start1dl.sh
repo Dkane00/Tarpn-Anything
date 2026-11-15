@@ -8,11 +8,14 @@
 ##### Start with the recipe on the tarpn web site.  This script is called from
 ##### tarpn_start1.sh.
 
+PATH_TO_TARPN_APPS="/usr/local/sbin"
+
+
 sleep 1
 echo "###### This is the tarpn_start1dl script"
 sleep 1
 
-#### 034 11/11/2014  -- move PITNC utilities to /usr/local/sbin
+#### 034 11/11/2014  -- move PITNC utilities to /usr-local-sbin
 #### 035 11/29/2014  -- move ringfolder to ~/ringfolder instead of ~/bpq/ringFolder
 ####                    use amixer to set volume all the way up.
 #### 036 12/28/2014  -- get wiringPi GPIO tools.
@@ -121,10 +124,14 @@ sleep 1
 ### BULLSEYE 019   01-01-2024  -- use CONTROL PANEL log instead of PWRMAN log
 ### BULLSEYE 020   03-23-2024  -- use CONTROL PANEL log instead of PWRMAN log
 ### BULLSEYE 021   01-26-2025  -- install tarpn-mon
-
+### BULLSEYE 022   05-08-2025  -- change the way tarpn-mon version is read to use -version
+### BULLSEYE 023   05-08-2025  -- work on installing tarpn-mon service and whatnot -- create two new logfiles statusmonitor-log and tarpn-mon-log  use PATH_TO_TARPN_APPS
+### BULLSEYE 024   06-06-2025  -- Use the same define for TARPNCOMMANDLOG in every script file that refers to that log file.
+### BULLSEYE 025   11-10-2025  -- REMOVE: sudo python -m pip install singledispatch backports_abc  -- I had an intermittent problem with the install, and it doesn't seem to be used anyway.
+###  Bullseye026   11-22-2025  -- Add some comments about running this script twice on the same machine.
 echo "###### version number is:"
 sleep 1
-echo "###### tarpn_start1dl BULLSEYE 021"
+echo "######tarpn_start1dl            Bullseye026" #  --VERSION--#########
 
 #### According to this web page: http://wiringpi.com/download-and-install/    Wiring PI is now standard with the Raspbian install.   Note from July 9, 2022
 #### #####
@@ -152,7 +159,7 @@ uptime
 ########## from which we download more scripts and code.  If not, then we're not being called in the right order.
 ########## We're only supporting a particular startup sequence.
 
-if [ -f /usr/local/sbin/source_url.txt ];
+if [ -f $PATH_TO_TARPN_APPS/source_url.txt ];
 then
     echo -n;
 else
@@ -160,8 +167,7 @@ else
         echo "ERROR0: Aborting"
         exit 1
 fi
-_source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
-
+_source_url=$(tr -d '\0' <$PATH_TO_TARPN_APPS/source_url.txt);
 
 ###### This is not needed for Tarpn-Anything
 ########## This script is supposed to be called tarpn_start1.sh and should be located in the present working directory.
@@ -200,24 +206,34 @@ fi
 
 
 ###########  Get UNIX EPOCH TIME and write it to the card.
-if [ -f /usr/local/sbin/tarpn_start1dl_starttime.txt ];
+if [ -f $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt ];
 then
    echo "##### This looks like a re-install.  We shouldn't be doing that. "
    echo "violation:"
-   ls -lrts /usr/local/sbin/tarpn_start1dl_starttime.txt
+   ls -lrts $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt
    echo "contents:"
-   cat /usr/local/sbin/tarpn_start1dl_starttime.txt
+   cat $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt
    echo "current unix epoch time: "
    date +%s
    exit 1;
 fi
-date +%s > $HOME/datetemp.txt
-sudo mv $HOME/datetemp.txt /usr/local/sbin/tarpn_start1dl_starttime.txt
-echo -n "This SD card is "
-cat /usr/local/sbin/tarpn_start1dl_starttime.txt
 
-source /usr/local/sbin/tarpnget.sh
-source /usr/local/sbin/sleep_with_count.sh
+#### END OF  "Protect against running again which would screw up the install"
+
+
+date +%s > $HOME/datetemp.txt
+sudo mv $HOME/datetemp.txt $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt
+echo -n "This SD card is "
+cat $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt
+
+source $PATH_TO_TARPN_APPS/tarpnget.sh
+source $PATH_TO_TARPN_APPS/sleep_with_count.sh
+
+
+
+##################################################### AFTER THIS
+
+
 source /usr/local/sbin/tarpn_portable.sh        # Tarpn-Anything: user/home/CPU portability layer
 echo "##### Installing for user '$TARPN_USER' (home $TARPN_HOME) on a '$TARPN_ARCH' CPU"
 
@@ -440,7 +456,7 @@ if [ -f "$TARPN_SRC_DIR/tarpn_start2.sh" ];
 then
    echo "##### script 2 is here moving on!!"
    chmod +x tarpn_start2.sh;
-   sudo cp tarpn_start2.sh /usr/local/sbin/tarpn_start2.sh;
+   sudo cp tarpn_start2.sh $PATH_TO_TARPN_APPS/tarpn_start2.sh;
 else
    echo "ERROR:  Failure retrieving script #2.  Something is wrong"
    echo "ERROR:  Make sure that you pulled all the install scripts for Tarpn-Anything from the repo"
@@ -594,6 +610,30 @@ echo "Created" $TARPN_TARPNSTAT_LOGFILE
 echo -ne $(date) "" >> $TARPN_TARPNSTAT_LOGFILE
 echo " ### tarpn_start1dl init log file"  >> $TARPN_TARPNSTAT_LOGFILE
 
+TARPNMON_RUNNER_LOG="/var/log/tarpn_mon.log";
+echo "tarpn-start-installer" > tarpnmon-runner-temp.log
+sudo mv tarpnmon-runner-temp.log $TARPNMON_RUNNER_LOG
+sudo chmod 666 $TARPNMON_RUNNER_LOG
+sudo chown root $TARPNMON_RUNNER_LOG
+echo -ne $(date) "" > $TARPNMON_RUNNER_LOG
+echo "Created" $TARPNMON_RUNNER_LOG >> $TARPNMON_RUNNER_LOG
+echo "Created" $TARPNMON_RUNNER_LOG
+echo -ne $(date) "" >> $TARPNMON_RUNNER_LOG
+echo " ### tarpn_start1dl init log file"  >> $TARPNMON_RUNNER_LOG
+
+STATUSMONITOR_LOGFILE="/var/log/tarpn_statusmonitor.log";
+echo "tarpn-start-installer" > statusmonitor_temp.log
+sudo mv statusmonitor_temp.log $STATUSMONITOR_LOGFILE
+sudo chmod 666 $STATUSMONITOR_LOGFILE
+sudo chown root $STATUSMONITOR_LOGFILE
+echo -ne $(date) "" > $STATUSMONITOR_LOGFILE
+echo "Created" $STATUSMONITOR_LOGFILE >> $STATUSMONITOR_LOGFILE
+echo "Created" $STATUSMONITOR_LOGFILE
+echo -ne $(date) "" >> $STATUSMONITOR_LOGFILE
+echo " ### tarpn_start1dl init log file"  >> $STATUSMONITOR_LOGFILE
+
+
+
 ls -l /var/log/tarpn*
 
 uptime >> $TARPNCOMMANDLOGFILE
@@ -636,7 +676,7 @@ if [ -f runbpq.sh ];
 then
    echo "##### runbpq.sh downloaded successfully"
    chmod +x runbpq.sh;
-   sudo mv runbpq.sh /usr/local/sbin/runbpq.sh;
+   sudo mv runbpq.sh $PATH_TO_TARPN_APPS/runbpq.sh;
    echo "#####"
 else
    echo "ERROR: Failure retrieving runbpq.sh.  Something is wrong"
@@ -652,7 +692,7 @@ if [ -f test_internet.sh ];
 then
    echo "##### runbpq.sh downloaded successfully"
    chmod +x test_internet.sh;
-   sudo mv test_internet.sh /usr/local/sbin/test_internet.sh;
+   sudo mv test_internet.sh $PATH_TO_TARPN_APPS/test_internet.sh;
    echo "#####"
 else
    echo "ERROR: Failure retrieving test_internet.sh.  Something is wrong"
@@ -733,7 +773,7 @@ if [ -f tarpn ];
 then
    echo "##### tarpn downloaded successfully"
    chmod +x tarpn;
-   sudo cp tarpn /usr/local/sbin/tarpn;
+   sudo cp tarpn $PATH_TO_TARPN_APPS/tarpn;
    echo "#####"
 else
    echo "ERROR:  Failure finding tarpn.  Something is wrong"
@@ -1166,7 +1206,7 @@ echo "##"
 echo "## Remove old copy of linbpq"
 sudo rm -f linbpq
 echo "## Remove old install zip file"
-sudo rm *.zip
+sudo rm -f *.zip
 echo "## Remove old HTML pages"
 sudo rm -Rf HTMLPages
 sudo rm -Rf HTML
@@ -1490,7 +1530,7 @@ fi
 if [ -f w4eip_link_quality.txt ];
 then
     chmod +x w4eip_link_quality.txt
-    sudo mv w4eip_link_quality.txt /usr/local/sbin/trr
+    sudo mv w4eip_link_quality.txt $PATH_TO_TARPN_APPS/trr
     echo "##### trr command has been installed."
 else
     echo "ERROR-TRR Something is wrong.  I had access to the proper web site but could"
@@ -1650,18 +1690,18 @@ sleep 1
 
 ######
 
-cd /usr/local/sbin
+cd $PATH_TO_TARPN_APPS
 sudo mkdir home_web_app
 sudo chmod 777 home_web_app
-cd /usr/local/sbin/home_web_app
+cd $PATH_TO_TARPN_APPS/home_web_app
 
 
 date > $HOME/dateinstalled.txt
 sudo mv $HOME/dateinstalled.txt .
 
-if [ -f /usr/local/sbin/home_web_app/dateinstalled.txt ];
+if [ -f $PATH_TO_TARPN_APPS/home_web_app/dateinstalled.txt ];
 then
-  echo "TARPN-HOME folder is created in /usr/local/sbin"
+  echo "TARPN-HOME folder is created in $PATH_TO_TARPN_APPS"
 else
   echo "TARPN-HOME folder create failed.  Abort install!"
   exit 1
@@ -1675,7 +1715,7 @@ pwd
 ls -lrat
 echo -ne "pwd="
 pwd
-cd /usr/local/sbin
+cd $PATH_TO_TARPN_APPS
 sudo chmod 755 home_web_app
 cd $HOME
 echo -ne "pwd="
@@ -1689,14 +1729,14 @@ sudo rm -rf $HOME/temporary_home_web_app
 cd $HOME
 date > dateinstalled.txt
 
-cd /usr/local/sbin/home_web_app
+cd $PATH_TO_TARPN_APPS/home_web_app
 sudo mv ~/dateinstalled.txt .
 
-if [ -f /usr/local/sbin/home_web_app/dateinstalled.txt ];
+if [ -f $PATH_TO_TARPN_APPS/home_web_app/dateinstalled.txt ];
 then
    echo -ne $(date) "" >> $HOME_LOGFILE
-   echo " TARPN-HOME folder is created in /usr/local/sbin" >> $HOME_LOGFILE
-   echo "TARPN-HOME folder is created in /usr/local/sbin"
+   echo " TARPN-HOME folder is created in $PATH_TO_TARPN_APPS" >> $HOME_LOGFILE
+   echo "TARPN-HOME folder is created in $PATH_TO_TARPN_APPS"
 else
    echo -ne $(date) "" >> $HOME_LOGFILE
    echo " TARPN-HOME folder create failed.  Abort install!" >> $HOME_LOGFILE
@@ -1830,7 +1870,7 @@ if [ -f /etc/systemd/system/home.service ];
 then
 ### Download files related to automatic operation
    chmod +x home_background.sh
-   sudo mv home_background.sh /usr/local/sbin
+   sudo mv home_background.sh $PATH_TO_TARPN_APPS
 
 ### Start HOME service from the OS
    echo "##### NC4FG's TARPN-HOME SERVICE file installed"
@@ -1936,10 +1976,10 @@ else
 fi
 
 chmod +x neighbor_port_association.app
-sudo mv neighbor_port_association.app /usr/local/sbin
-rm npa.zip
+sudo mv neighbor_port_association.app $PATH_TO_TARPN_APPS
+rm -f npa.zip
 
-if [ -x /usr/local/sbin/neighbor_port_association.app ];
+if [ -x $PATH_TO_TARPN_APPS/neighbor_port_association.app ];
 then
    echo "##### Neighbor-Port-Assocation APP installed"
 else
@@ -1988,7 +2028,7 @@ if [ -f /etc/systemd/system/neighbor_port_association.service ];
 then
 ### Process the neighbor port association app and script file and put them into sbin
    chmod +x npa.sh
-   sudo mv npa.sh /usr/local/sbin
+   sudo mv npa.sh $PATH_TO_TARPN_APPS
 else
    echo "ERROR!  Neighbor-Port-Assocation SERVICE file failed to copy to /etc/system.d/system."
    echo "        If you got this message during a clean install, then"
@@ -2000,7 +2040,7 @@ fi
 echo "##### NEIGHBOR-PORT-ASSOCIATON SERVICE installed #########"
 
 
-if [ -x /usr/local/sbin/npa.sh ];
+if [ -x $PATH_TO_TARPN_APPS/npa.sh ];
 then
    echo "##### Neighbor-Port-Assocation script installed"
 else
@@ -2153,48 +2193,51 @@ tarpnget node_calls_linktest.sh
 if [ -f node_calls_linktest.sh ];
 then
     chmod +x node_calls_linktest.sh
-    sudo rm -f /usr/local/sbin/node_calls_linktest.sh
-    sudo mv node_calls_linktest.sh /usr/local/sbin/node_calls_linktest.sh
+    sudo rm -f $PATH_TO_TARPN_APPS/node_calls_linktest.sh
+    sudo mv node_calls_linktest.sh $PATH_TO_TARPN_APPS/node_calls_linktest.sh
     echo "##### NODE_CALLS_LINKTEST script has been installed."
 else
     echo "ERROR3.006   Something is wrong.  I had access to TARPN server but could"
     echo "             not acquire the NODE_CALLS_LINKTEST script from TARPN server.  "
     echo "             Abort"
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "ERROR3.006. Cound not acquire NODE_CALLS_LINKTEST script from TARPN server"  >> $TARPN_COMMAND_LOGFILE
+    echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
+    echo "ERROR3.006. Cound not acquire NODE_CALLS_LINKTEST script from TARPN server"  >> $TARPNCOMMANDLOGFILE
     echo
     echo "##### Aborting"
     exit 1;
 fi
 
-echo
-echo "Install WA2M tarpn-mon application"
-echo
+########################### TARPN-MON ###########################################################################################################
+########################### TARPN-MON ###########################################################################################################
+########################### TARPN-MON ###########################################################################################################
 
+echo " "
+echo " "
+echo " "
+echo "###### Install WA2M TARPN-MON web app."
+echo " "
+
+
+TARPN_MON_SERVICE_PATH_AND_FILE="/etc/systemd/system/tarpn_mon.service";
+TARPN_MON_SERVICE_DOWNLOAD_NAME="tarpn-mon-service.txt";
+TARPN_MON_SCRIPT_NAME="tarpnmon-runner.sh"
+TARPN_MON_SCRIPT_PATH_AND_NAME="$PATH_TO_TARPN_APPS/tarpnmon-runner.sh"
+TARPN_MON_SERVICE_FILE="tarpn_mon.service";
+
+
+
+#### download a current copy of the tarpnmon-runner script
 
 cd $HOME
-sudo rm -rf tarpn-mon-install-temp-directory
-mkdir tarpn-mon-install-temp-directory
-cd tarpn-mon-install-temp-directory
+sudo rm -rf download_temp_folder
+mkdir download_temp_folder
+cd download_temp_folder
 
+
+
+
+#### download  tarpn-mon
 sudo rm -rf __MACOSX
-
-#### download a the tarpnmon-runner script
-tarpnget tarpnmon-runner.sh
-if [ -f tarpnmon-runner.sh ];
-then
-    chmod +x tarpnmon-runner.sh
-    sudo mv tarpnmon-runner.sh /usr/local/sbin/tarpnmon-runner.sh
-else
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "update.sh  ERRORtarpnmonrunners. Cound not acquire tarpnmon-runner script from TARPN server"  >> $TARPN_COMMAND_LOGFILE
-    echo "#### ERRORtarpnmonrunner"
-    echo "#### Something is wrong.  I had access to TARPN server but could"
-    echo "#### not acquire the tarpnmon-runner script from TARPN server.  "
-    echo "#### Abort"
-    exit 1;
-fi
-
 tarpnget tarpn-mon.linux-arm32.zip
 
 if [ -f tarpn-mon.linux-arm32.zip ];
@@ -2204,66 +2247,87 @@ then
     rm -rf tarpn-mon-linux-arm32.zip
     mv tarpn-mon.linux-arm32 tarpn-mon
     chmod +x tarpn-mon
-    sudo mv tarpn-mon /usr/local/sbin/tarpn-mon
-    echo -ne "tarpn-mon version = "
-    tarpn_mon_version
-    tarpn_mon_version > tarpn-mon-version.txt
-    echo " " >> tarpn-mon-version.txt
-    sudo mv tarpn-mon-version.txt /usr/local/etc
-
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo -ne "tarpn-mon version = "  >> $TARPN_COMMAND_LOGFILE
-    tarpn_mon_version  >> $TARPN_COMMAND_LOGFILE
-    echo "##### tarpn-mon app has been installed."
+    sudo rm -f $PATH_TO_TARPN_APPS/tarpn-mon
+    sudo mv tarpn-mon $PATH_TO_TARPN_APPS/tarpn-mon
 else
-    echo "ERROR3.007   Something is wrong.  I had access to TARPN server but could"
-    echo "             not acquire the tarpn-mon.linux-arm32.zip from TARPN server.  "
-    echo "             Abort"
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "ERROR3.007 Cound not acquire tarpn-mon.linux-arm32.zip from TARPN server"  >> $TARPN_COMMAND_LOGFILE
-    echo
-    echo "##### Aborting"
-    exit 1;
+    echo "ERROR4.098!  Outputting debug information to be relayed to he who debugs."
+    ls -lrat
+    pwd
+    echo "url"
+    echo $_source_url
+    echo "ERROR4.092!  Failed to obtain WA2M tarpn-mon from the web server."
+    echo "        please send a missive about this to tarpn@groups.io"
+    echo "        Include the terminal output from this update."
+    echo "ERROR4.092: Aborting"
+    exit 1
 fi
 
-echo
-echo "Get TARPN-MON version statement text file and compare the statement with the application."
-echo
-tarpnget tarpn-mon-version.txt
 
-if [ -f tarpn-mon-version.txt ];
+echo
+echo "install the systemd SERVICE for WA2M's TARPN-MON."
+
+
+
+
+
+echo -ne $(date) "" >> $TARPNMON_RUNNER_LOG
+echo "TARPN INSTALL is installing tarpn-mon service" >> $TARPNMON_RUNNER_LOG
+echo "installing tarpn-mon service"
+
+tarpnget $TARPN_MON_SERVICE_DOWNLOAD_NAME
+
+#### now tarpn-mon-service.txt should exist in the home directory
+if [ -f $TARPN_MON_SERVICE_DOWNLOAD_NAME ];
 then
-    echo " " >> tarpn-mon-version.txt
-    echo " " >> tarpn-mon-version.txt
-    DIFF=$(diff -qbZB /usr/local/etc/tarpn-mon-version.txt tarpn-mon-version.txt | wc -c)
-    if [ $DIFF -ne 0 ];
-    then
-        echo "ERROR3.008: tarpn-mon version does NOT match the version file"
-        echo "            stored on the web server.  This is a KA2DEW goof."
-        echo "            Please grab this entire log file and email it to him!"
-        echo -ne "Version from the start1dl-installed-app: "
-        tarpn_mon_version
-        echo -ne "Version downloaded from the web server:  "
-        cat tarpn-mon-version.txt
-        echo " "
-        echo "            I'm sorry for the inconvenience!"
-        exit 1;
-    else
-        rm -rf tarpn-mon-version.txt
-        echo "tarpn-mon application is OK"
-        echo
-    fi
+    mv $TARPN_MON_SERVICE_DOWNLOAD_NAME $TARPN_MON_SERVICE_FILE
+    sudo mv $TARPN_MON_SERVICE_FILE $TARPN_MON_SERVICE_PATH_AND_FILE
+    echo " "
+    ### Start TARPN-MON service from the OS
+    sudo systemctl daemon-reload
+    sudo systemctl enable $TARPN_MON_SERVICE_FILE
+    sudo systemctl start $TARPN_MON_SERVICE_FILE
+
+    echo -ne $(date) "" >> $TARPNMON_RUNNER_LOG
+    echo "tarpn-mon-service is enabled - waiting for start."  >> $TARPNMON_RUNNER_LOG
 else
-    echo "ERROR3.009   Something is wrong.  I had access to TARPN server but could"
-    echo "             not acquire the tarpn-mon-version.txt from TARPN server.  "
-    echo "             Abort"
-    echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
-    echo "ERROR3.009. Cound not acquire tarpn-mon-version.txt from TARPN server"  >> $TARPN_COMMAND_LOGFILE
-    echo
-    echo "##### Aborting"
+    echo "ERROR4.098!  Outputting debug information to be relayed to he who debugs."
+    ls -lrat
+    pwd
+    echo "url"
+    echo $_source_url
+    echo "ERROR4.098!  Failed to obtain tarpn-mon-service.txt from the web server."
+    echo "        please send a missive about this to tarpn@groups.io"
+    echo "        Include the terminal output from this update."
+    echo "ERROR4.098: Aborting"
+    exit 1
+fi
+
+
+echo "Get runner script for tarpn-mon and install it."
+tarpnget $TARPN_MON_SCRIPT_NAME
+if [ -f $TARPN_MON_SCRIPT_NAME ];
+then
+    sudo chmod +x $TARPN_MON_SCRIPT_NAME
+    sudo mv $TARPN_MON_SCRIPT_NAME $TARPN_MON_SCRIPT_PATH_AND_NAME
+    echo "##### TARPN-MON-RUNNER file installed"
+    sleep 1
+else
+    echo "ERROR4.099! TARPN-MON SERVICE file failed"
+    echo "              to copy to /etc/system.d/system."
+    echo "              Please send a missive about this to tarpn@groups.io"
+    echo "              Include the terminal output from this update."
+    echo "ERROR4.099: Aborting"
     exit 1;
 fi
 
+
+
+cd $HOME
+sudo rm -rf $HOME/download_temp_folder
+
+######### Done with TARPN-MON service ###################################################################
+######### Done with TARPN-MON service ###################################################################
+######### Done with TARPN-MON service ###################################################################
 
 
 
@@ -2301,7 +2365,7 @@ uptime
 
 ######## Write a flag to tell  TARPN-START 2 that we finished TARPN-START-1.
 ######## This keeps somebody from running them out of order or running them at the same time.
-sudo touch /usr/local/sbin/tarpn_start1_finished.flag
+sudo touch $PATH_TO_TARPN_APPS/tarpn_start1_finished.flag
 
 
 

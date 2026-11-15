@@ -105,9 +105,12 @@ SOURCE_URL="https://tarpn.net/bullseye2021";
 #### 2023-05-19  BULLSEYE 020-- add support for "c03115"   #### Raspberry Pi 4 Model B Rev 1.5 4GB    Keith Nolan  Jun 19, 2023
 #### 2023-05-25  BULLSEYE 021-- add support for "d03115"   #### Raspberry Pi 4 Model B Rev 1.5 8GB    Larry K4BLX,
 #### 2023-05-25  BULLSEYE 022-- add support for Raspberry PI 3A+  -- Tadd
+#### 2025-07-25   Bullseye023-- add support for Raspberry PI 3B+ new for 2025?
+
+
 echo "######"
 echo "######"
-echo "###### tarpn start 1 Version BULLSEYE 022"
+echo "######tarpn_start1              Bullseye023" #  --VERSION--#########
 echo "######"
 echo "######"
 echo "######"
