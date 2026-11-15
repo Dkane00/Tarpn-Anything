@@ -1795,6 +1795,13 @@ if ! command -v lsusb &> /dev/null; then
    sudo apt-get install -y usbutils
 fi
 
+# Install net-tools if not present: "tarpn ports" uses netstat.  Raspberry Pi OS ships it,
+# Ubuntu/Debian/Mint desktops usually don't (the package is called net-tools, not netstat).
+if ! command -v netstat &> /dev/null; then
+   echo "##### Installing net-tools (netstat) for 'tarpn ports'"
+   sudo apt-get install -y net-tools
+fi
+
 echo "#####"
 echo "#####"
 echo "#####"
