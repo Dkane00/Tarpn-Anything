@@ -2206,14 +2206,14 @@ then
     chmod +x tarpn-mon
     sudo mv tarpn-mon /usr/local/sbin/tarpn-mon
     echo -ne "tarpn-mon version = "
-    tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3
-    tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3 > tarpn-mon-version.txt
+    tarpn_mon_version
+    tarpn_mon_version > tarpn-mon-version.txt
     echo " " >> tarpn-mon-version.txt
     sudo mv tarpn-mon-version.txt /usr/local/etc
 
     echo -ne $(date) "" >> $TARPN_COMMAND_LOGFILE
     echo -ne "tarpn-mon version = "  >> $TARPN_COMMAND_LOGFILE
-    tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3  >> $TARPN_COMMAND_LOGFILE
+    tarpn_mon_version  >> $TARPN_COMMAND_LOGFILE
     echo "##### tarpn-mon app has been installed."
 else
     echo "ERROR3.007   Something is wrong.  I had access to TARPN server but could"
@@ -2242,7 +2242,7 @@ then
         echo "            stored on the web server.  This is a KA2DEW goof."
         echo "            Please grab this entire log file and email it to him!"
         echo -ne "Version from the start1dl-installed-app: "
-        tarpn-mon -debug-info | grep go | grep -v github | cut -do -f3
+        tarpn_mon_version
         echo -ne "Version downloaded from the web server:  "
         cat tarpn-mon-version.txt
         echo " "

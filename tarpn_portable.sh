@@ -17,6 +17,23 @@
 
 TARPN_CONF_FILE="/usr/local/etc/tarpn_user.conf"
 
+# The original scripts set TARPNCOMMANDLOGFILE but write to TARPN_COMMAND_LOGFILE in places
+# ("ambiguous redirect").  Give the second spelling the same log file.
+: "${TARPN_COMMAND_LOGFILE:=/var/log/tarpn_command.log}"
+export TARPN_COMMAND_LOGFILE
+
+# Print tarpn-mon's own version (e.g. v0.1.1).  The original check took the Go compiler's
+# version (e.g. 1.22.5) from -debug-info instead, which never matches tarpn-mon-version.txt.
+# Current builds stamp the app version in as:   build  -ldflags="-X main.Version=v0.1.1"
+tarpn_mon_version() {
+   local info ver
+   info="$(tarpn-mon -debug-info 2>/dev/null)"
+   ver="$(printf '%s\n' "$info" | sed -n 's/.*main\.Version=\([^" ]*\).*/\1/p' | head -1)"
+   # older builds without the stamp: fall back to the original method
+   [ -z "$ver" ] && ver="$(printf '%s\n' "$info" | grep go | grep -v github | cut -do -f3)"
+   printf '%s\n' "$ver"
+}
+
 #### ---- user / home --------------------------------------------------------------------------
 
 # Work out which (non-root) user the node belongs to and remember it.
