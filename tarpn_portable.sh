@@ -141,13 +141,14 @@ tarpn_install_qemu() {
    # Switch ARM emulation on.  Distros do this two different ways, so do BOTH:
    #  - binfmt-support (Ubuntu 22.04, Debian 11/12): update-binfmts reads /usr/share/binfmts/qemu-arm
    #  - systemd-binfmt (newer distros):              reads /usr/lib/binfmt.d/*.conf
-   # (Restarting systemd-binfmt "succeeds" even when it has nothing for qemu, so it must not
-   #  be allowed to skip the update-binfmts step.)
-   if command -v update-binfmts >/dev/null 2>&1 && [ -f /usr/share/binfmts/qemu-arm ]; then
-      sudo update-binfmts --import qemu-arm 2>/dev/null
-      sudo update-binfmts --enable qemu-arm 2>/dev/null
-   fi
+   # ORDER MATTERS: restarting systemd-binfmt wipes every registration in the kernel and
+   # reloads only its own binfmt.d list - on Ubuntu 22.04 that list has no qemu.  So restart
+   # it FIRST, and do update-binfmts LAST so nothing can undo it afterwards.
    sudo systemctl restart systemd-binfmt 2>/dev/null
+   if command -v update-binfmts >/dev/null 2>&1 && [ -f /usr/share/binfmts/qemu-arm ]; then
+      sudo update-binfmts --import qemu-arm
+      sudo update-binfmts --enable qemu-arm
+   fi
    # libtinfo.so.5 for piminicom (only if we end up using it)
    [ -d /usr/arm-linux-gnueabihf/lib ] && tarpn_fake_tinfo5 /usr/arm-linux-gnueabihf/lib
    # Make sure it really worked - every ARM TARPN program depends on it
