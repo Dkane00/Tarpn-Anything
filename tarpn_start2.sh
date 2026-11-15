@@ -12,6 +12,19 @@ if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; th
    exec sudo -u "$SUDO_USER" -H bash "$0" "$@"
 fi
 
+# Tarpn-Anything: load the portability layer right away so every error below can explain how to
+# fix it or report it (tarpn_fail_* helpers).  It is loaded again later, after tarpnget.sh.
+TARPN_INSTALL_PART=2
+TARPN_INSTALL_SCRIPT=tarpn_start2.sh
+export TARPN_INSTALL_PART
+if [ -f /usr/local/sbin/tarpn_portable.sh ]; then
+   source /usr/local/sbin/tarpn_portable.sh
+else
+   echo "THE TARPN INSTALL HAS STOPPED: part 1 of the install has not run on this system yet."
+   echo "Start the install with  ./tarpn_start1.sh  from your Tarpn-Anything folder."
+   exit 1
+fi
+
 cd ~
 echo "######"
 uptime
@@ -100,24 +113,14 @@ then
    echo " --- "
    sleep 1
 else
-   sleep 1
-   echo " -- "
-   echo " -- "
-   echo " -- "
-   echo "### ERROR801.001:TARPN START 1 didn't finish.  Please restart the init"
-   echo "###              process and complain to the author."
-   echo " -- "
-   exit 1
+   TARPN_INSTALL_PART=1 tarpn_fail_fix ERROR801.001 "Part 1 of the install (tarpn_start1.sh) did not finish on this system." \
+      "Run part 1 first - scroll back or check its messages if it stopped with an error."
 fi
 
 if [ -f /usr/local/etc/tarpn_start2_top.txt ];
 then
-   ls -lrats
-   echo "### ERROR801.002:TARPN INSTALL 2 has already run. "
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io."
-   echo "###              Aborting"
-   exit 1;
+   tarpn_fail_leftover ERROR801.002 "Part 2 of the install has already run (or started) on this system
+(the marker /usr/local/etc/tarpn_start2_top.txt is there)."
 fi
 _source_url=$(tr -d '\0' </usr/local/sbin/source_url.txt);
 rm -f ~/tarpn_start1*
@@ -140,12 +143,7 @@ if grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then TARPN_USE_GP
 
 if [ -f ~/tarpn.service ];
 then
-   ls -lrats
-   echo "### ERROR801.003:Premature existence of tarpn.service file in home directory"
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io."
-   echo "###              Aborting"
-   exit 1;
+   tarpn_fail_leftover ERROR801.003 "A leftover file ~/tarpn.service is in your home folder."
 fi
 
 
@@ -219,27 +217,14 @@ if [ -f ~/tarpn-service.txt ];
 then
    echo " "
 else
-   ls -lrats
-   echo "### ERROR801.004:Failed to obtain TARPN-SERVICE.TXT from the web server."
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io"
-   echo "###              Note: Outputting debug information to be relayed to debugger."
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "###              Aborting"
-   exit 1
+   tarpn_fail_download ERROR801.004 tarpn-service.txt
 fi
 
 cd ~
 
 if [ -f /etc/systemd/system/tarpn.service ];
 then
-   echo "### ERROR801.005:TARPN SERVICE file already existed in /etc/system.d/system."
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io."
-   echo "###              Aborting"
-   exit 1;
+   tarpn_fail_leftover ERROR801.005 "/etc/systemd/system/tarpn.service is already there."
 fi
 
 
@@ -263,20 +248,7 @@ if [ -f /etc/systemd/system/tarpn.service ];
 then
    echo "tarpn.service moved to system.d"
 else
-   echo " "
-   echo " "
-   echo " "
-   pwd
-   echo "/etc/systemd/system directory contains"
-   ls -lrats /etc/systemd/system
-   echo "local system $HOME directory contains"
-   ls -lrats
-   echo " "
-   echo "### ERROR801.006:TARPN SERVICE file failed to copy to /etc/system.d/system."
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io"
-   echo "###              Aborting"
-   exit 1;
+   tarpn_fail_report ERROR801.006 "The TARPN service file could not be put in /etc/systemd/system"
 fi
 
 uptime
@@ -345,13 +317,7 @@ then
     sudo mv logfiletruncate.sh /usr/local/sbin/logfiletruncate.sh
     echo "##### logfiletruncate.sh script has been installed."
 else
-    echo
-    echo
-    echo "### ERROR801.007:Something is wrong.  Program had access to TARPN server but "
-    echo "###              could not acquire the logfiletruncate.sh script from TARPN"
-    echo "###              server.  Please send a missive about this to tarpn@groups.io."
-    echo "###              Abort"
-    exit 1;
+    tarpn_fail_download ERROR801.007 logfiletruncate.sh
 fi
 
 echo
@@ -374,22 +340,12 @@ cd ~
 
 if [ -f /etc/systemd/system/pi_shutdown-service.txt ];
 then
-    echo
-    echo
-    echo "### ERROR801.008:PI SHUTDOWN SERVICE file already existed in /etc/system.d/system."
-    echo "###              If you got this message during a clean install, then"
-    echo "###              Please send a missive about this to tarpn@groups.io."
-    echo "###              Aborting"
-   exit 1;
+   tarpn_fail_leftover ERROR801.008 "A leftover /etc/systemd/system/pi_shutdown-service.txt is there."
 fi
 
 if [ -f ~/pi_shutdown.service ];
 then
-   echo "### ERROR801.009:Premature existence of pi_shutdown.service file in home directory"
-   echo "###              If you got this message during a clean install, then"
-   echo "###              please send a missive about this to tarpn@groups.io."
-   echo "###              Aborting"
-   exit 1;
+   tarpn_fail_leftover ERROR801.009 "A leftover file ~/pi_shutdown.service is in your home folder."
 fi
 
 tarpnget pi_shutdown-service.txt
@@ -400,16 +356,7 @@ then
     mv pi_shutdown-service.txt pi_shutdown.service
     sudo mv ~/pi_shutdown.service /etc/systemd/system/pi_shutdown.service
 else
-    echo "### ERROR801.010:Failed to obtain pi_shutdown.service from the web page."
-    echo "###              If you got this message during a clean install, then"
-    echo "###              please send a missive about this to tarpn@groups.io"
-    echo "###        Note: Outputting debug information to be relayed to support."
-    ls -lrat
-    pwd
-    echo "url"
-    echo $_source_url
-    echo "ERROR: Aborting"
-    exit 1
+    tarpn_fail_download ERROR801.010 pi_shutdown-service.txt
 fi
 
 
@@ -425,12 +372,7 @@ then
         chmod +x gpio_for_controlpanel.sh
         sudo mv gpio_for_controlpanel.sh /usr/local/sbin
     else
-        echo "### ERROR801.011A:gpio_for_controlpanel file failed to download"
-        echo "        Please try your install procedure again from the Imager."
-        echo "        It is possible we're having some issue with the server."
-        echo "        If this fails twice, report this message at tarpn@groups.io"
-        echo "ERROR: Aborting"
-        exit 1;
+        tarpn_fail_download ERROR801.011A gpio_for_controlpanel.sh
     fi
 
     tarpnget pi_shutdown_background.sh
@@ -440,12 +382,7 @@ then
         chmod +x pi_shutdown_background.sh
         sudo mv pi_shutdown_background.sh /usr/local/sbin
     else
-        echo "### ERROR801.011C:pi_shutdown_background file failed to download"
-        echo "        Please try your install procedure again from the Imager."
-        echo "        It is possible we're having some issue with the server."
-        echo "        If this fails twice, report this message at tarpn@groups.io"
-        echo "ERROR: Aborting"
-        exit 1;
+        tarpn_fail_download ERROR801.011C pi_shutdown_background.sh
     fi
 
 
@@ -465,11 +402,7 @@ then
    echo "###########################################################"
    sleep 1
 else
-   echo "### ERROR801.011:PI SHUTDOWN SERVICE file failed to copy to /etc/system.d/system."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io."
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_report ERROR801.011 "The pi_shutdown service file could not be put in /etc/systemd/system"
 fi
 else
    echo "######"
@@ -495,19 +428,7 @@ if [ -f $HOME/listen.zip ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.012:Failed to obtain listen.zip from the web server."
-   echo "        please send a missive about this to tarpn@groups.io"
-   echo "        Include the terminal output from this update."
-   echo "ERROR806.062: Aborting"
-   exit 1
+   tarpn_fail_download ERROR801.012 listen.zip
 fi
 
 unzip listen.zip
@@ -516,19 +437,7 @@ if [ -f $HOME/listen ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.013:Error in unzipping listen.zip."
-   echo "###              please send a missive about this to tarpn@groups.io"
-   echo "###              Include the terminal output from this update."
-   echo "###              Aborting"
-   exit 1
+   tarpn_fail_unzip ERROR801.013 listen.zip
 fi
 
 sudo mv listen /usr/local/sbin/listen
@@ -555,19 +464,7 @@ if [ -f $HOME/linktest.zip ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.014:Failed to obtain linktest.zip from the web server."
-   echo "        please send a missive about this to tarpn@groups.io"
-   echo "        Include the terminal output from this update."
-   echo "ERROR801.014: Aborting"
-   exit 1
+   tarpn_fail_download ERROR801.014 linktest.zip
 fi
 
 unzip linktest.zip
@@ -576,19 +473,7 @@ if [ -f $HOME/linktest-app ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.015:Error in unzipping linktest.zip."
-   echo "                 please send a missive about this to tarpn@groups.io"
-   echo "                 Include the terminal output from this update."
-   echo "###              Aborting"
-   exit 1
+   tarpn_fail_unzip ERROR801.015 linktest.zip
 fi
 
 sudo mv linktest-app /usr/local/sbin/linktest
@@ -612,19 +497,7 @@ if [ -f $HOME/bbs_checker.zip ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.016:Failed to obtain bbs_checker.zip from the web server."
-   echo "                 please send a missive about this to tarpn@groups.io"
-   echo "                 Include the terminal output from this update."
-   echo "###              Aborting"
-   exit 1
+   tarpn_fail_download ERROR801.016 bbs_checker.zip
 fi
 
 echo "##### received BBS-CHECKER.ZIP file"
@@ -634,19 +507,7 @@ if [ -f $HOME/bbs_checker ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.017:Error in unzipping bbs_checker.zip."
-   echo "              please send a missive about this to tarpn@groups.io"
-   echo "              Include the terminal output from this update."
-   echo "###             Aborting"
-   exit 1
+   tarpn_fail_unzip ERROR801.017 bbs_checker.zip
 fi
 
 echo "##### received bbs_checker  application"
@@ -669,19 +530,7 @@ if [ -f $HOME/sendroutestocq.zip ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.018:Failed to obtain SENDROUTESTOCQ.zip from the web server."
-   echo "                 please send a missive about this to tarpn@groups.io"
-   echo "                 Include the terminal output from this update."
-   echo "###              Aborting"
-   exit 1
+   tarpn_fail_download ERROR801.018 sendroutestocq.zip
 fi
 echo "##### received SENDROUTESTOCQ.ZIP file"
 
@@ -691,19 +540,7 @@ if [ -f $HOME/sendroutestocq ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.019:Error in unzipping SENDROUTESTOCQ.zip."
-   echo "              please send a missive about this to tarpn@groups.io"
-   echo "              Include the terminal output from this update."
-   echo "###             Aborting"
-   exit 1
+   tarpn_fail_unzip ERROR801.019 sendroutestocq.zip
 fi
 
 echo "##### received SENDROUTESTOCQ  application"
@@ -746,9 +583,7 @@ then
 
    if [ -f /etc/systemd/system/statusmonitor.service ];
    then
-      echo "### ERROR801.020:statusmonitor service already existed!. "
-      echo "###              Aborting"
-      exit 1;
+      tarpn_fail_leftover ERROR801.020 "/etc/systemd/system/statusmonitor.service is already there."
    else
       mv statusmonitor-service.txt statusmonitor.service
       sudo mv ~/statusmonitor.service /etc/systemd/system/statusmonitor.service
@@ -767,16 +602,11 @@ then
          echo "##### OS has been told to call it."
          echo -e "\n\n\n\n"
       else
-         echo "### ERROR801.021:statusmonitor.service was not installed"
-         echo "###              Aborting"
-         exit 1;
+         tarpn_fail_report ERROR801.021 "The statusmonitor service file could not be put in /etc/systemd/system"
       fi
    fi
 else
-      echo "### ERROR801.022:Did not receive STATUSMONITOR_BACKGROUND."
-   echo
-   echo "##### Aborting"
-   exit 1;
+   tarpn_fail_download ERROR801.022 statusmonitor.sh
 fi
 rm -f statusmonitor-service*
 rm -f statusmonitor.service*
@@ -802,9 +632,7 @@ then
 
    if [ -f /etc/systemd/system/rx_tarpnstat.service ];
    then
-      echo "### ERROR801.023:rx_tarpnstat service already existed!. "
-      echo "##### Aborting"
-      exit 1;
+      tarpn_fail_leftover ERROR801.023 "/etc/systemd/system/rx_tarpnstat.service is already there."
    else
       mv rx_tarpnstat-service.txt rx_tarpnstat.service
       sudo mv ~/rx_tarpnstat.service /etc/systemd/system/rx_tarpnstat.service
@@ -823,16 +651,11 @@ then
          echo "##### OS has been told to call it."
          echo -e "\n\n\n\n"
       else
-         echo "### ERROR801.041:rx_tarpnstat.service was not installed"
-         echo "##### Aborting"
-         exit 1;
+         tarpn_fail_report ERROR801.041 "The rx_tarpnstat service file could not be put in /etc/systemd/system"
       fi
    fi
 else
-   echo "### ERROR801.042:Did not receive rx_tarpnstat.sh."
-   echo
-   echo "##### Aborting"
-   exit 1;
+   tarpn_fail_download ERROR801.042 rx_tarpnstat.sh
 fi
 rm -f rx_tarpnstat-service*
 rm -f rx_tarpnstat.service*
@@ -851,12 +674,7 @@ then
 else
     echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
     echo "### ERROR801.046:tarpn-start2.sh: rx_tarpnstatapp.zip not available from TARPN server"  >> $TARPNCOMMANDLOGFILE
-    pwd
-    ls -lrats
-    echo "###              Did not receive rx_tarpnstatapp.zip file.  FAIL FAIL FAIL"
-    echo
-    echo "###              Abort -- complain to tarpn@groups.io."
-    exit 1
+    tarpn_fail_download ERROR801.046 rx_tarpnstatapp.zip
 fi
 
 if [ -f rx_tarpnstatapp ];
@@ -869,12 +687,7 @@ then
 else
     echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
     echo "### ERROR801.051:tarpn-start2.sh: rx_tarpnstatapp not available from TARPN server"  >> $TARPNCOMMANDLOGFILE
-    pwd
-    ls -lrats
-    echo "### ERROR801.053:Unable to unzip rx_tarpnstatapp!  FAIL FAIL FAIL"
-    echo
-    echo "##### Abort -- complain to tarpn@groups.io."
-    exit 1
+    tarpn_fail_unzip ERROR801.053 rx_tarpnstatapp.zip
 fi
 uptime
 
@@ -963,19 +776,7 @@ else
    echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
    echo "### ERROR801.061:Error in downloading g8bpq_link_stress.zip"  >> $TARPNCOMMANDLOGFILE
    resume_services
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.061:Error in dpwnloading g8bpq_link_stress.zip."
-   echo "              please send a missive about this to tarpn@groups.io"
-   echo "              Include the terminal output from this update."
-   echo "### ERROR801.061:Aborting"
-   exit 1
+   tarpn_fail_download ERROR801.061 g8bpq_link_stress.zip
 fi
 
 echo "#####"
@@ -990,19 +791,7 @@ else
    echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
    echo "### ERROR801.065.  Error in unzip of g8bpq_link_stress.zip"  >> $TARPNCOMMANDLOGFILE
    resume_services
-   echo "   Note: Outputting debug information to be relayed to support."
-   echo "   Note: Outputting debug information to be relayed to support."
-   echo "   Note: Outputting debug information to be relayed to support."
-   echo "   Note: Outputting debug information to be relayed to support."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "### ERROR801.065:Error in unzip of g8bpq_link_stress.zip."
-   echo "              please send a missive about this to tarpn@groups.io"
-   echo "              Include the terminal output from this update."
-   echo "### ERROR801.065:Aborting"
-   exit 1
+   tarpn_fail_unzip ERROR801.065 g8bpq_link_stress.zip
 fi
 
 

@@ -10,6 +10,21 @@
 
 PATH_TO_TARPN_APPS="/usr/local/sbin"
 
+# Tarpn-Anything: load the portability layer right away so every error below can explain how to
+# fix it or report it (tarpn_fail_* helpers).  It is loaded again later, after tarpnget.sh.
+TARPN_INSTALL_PART=1
+TARPN_INSTALL_SCRIPT=tarpn_start1dl.sh
+export TARPN_INSTALL_PART
+if [ -f $PATH_TO_TARPN_APPS/tarpn_portable.sh ]; then
+   source $PATH_TO_TARPN_APPS/tarpn_portable.sh
+elif [ -f "$(dirname "${BASH_SOURCE[0]}")/tarpn_portable.sh" ]; then
+   source "$(dirname "${BASH_SOURCE[0]}")/tarpn_portable.sh"
+else
+   echo "THE TARPN INSTALL HAS STOPPED: tarpn_start1dl.sh was started on its own."
+   echo "Always start the install with  ./tarpn_start1.sh  from your Tarpn-Anything folder."
+   exit 1
+fi
+
 
 sleep 1
 echo "###### This is the tarpn_start1dl script"
@@ -163,9 +178,8 @@ if [ -f $PATH_TO_TARPN_APPS/source_url.txt ];
 then
     echo -n;
 else
-        echo "ERROR0: source URL file not found."
-        echo "ERROR0: Aborting"
-        exit 1
+        tarpn_fail_fix START1DL-ORDER "tarpn_start1dl.sh was started on its own.  It is a later step of the install." \
+      "Always start the install with  ./tarpn_start1.sh  - it runs this step for you."
 fi
 _source_url=$(tr -d '\0' <$PATH_TO_TARPN_APPS/source_url.txt);
 
@@ -199,23 +213,19 @@ if [ -f tarpn_start1dl.sh ];
 then
    echo
 else
-   echo "ERROR:  Help.  I don't know where I am.  Is this tarpn_start1dl.sh  ?"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_fix START1DL-WHERE "tarpn_start1dl.sh cannot find itself in $TARPN_SRC_DIR" \
+      "Your copy of Tarpn-Anything is incomplete.  Get a fresh, complete copy:" \
+      "   cd ~  &&  mv Tarpn-Anything Tarpn-Anything.old" \
+      "   git clone https://github.com/Dkane00/Tarpn-Anything.git" \
+      "and start again from the new Tarpn-Anything folder with  ./tarpn_start1.sh"
 fi
 
 
 ###########  Get UNIX EPOCH TIME and write it to the card.
 if [ -f $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt ];
 then
-   echo "##### This looks like a re-install.  We shouldn't be doing that. "
-   echo "violation:"
-   ls -lrts $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt
-   echo "contents:"
-   cat $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt
-   echo "current unix epoch time: "
-   date +%s
-   exit 1;
+   tarpn_fail_leftover START1DL-AGAIN "The marker file $PATH_TO_TARPN_APPS/tarpn_start1dl_starttime.txt shows that this
+part of the install has already run on this system."
 fi
 
 #### END OF  "Protect against running again which would screw up the install"
@@ -458,11 +468,11 @@ then
    chmod +x tarpn_start2.sh;
    sudo cp tarpn_start2.sh $PATH_TO_TARPN_APPS/tarpn_start2.sh;
 else
-   echo "ERROR:  Failure retrieving script #2.  Something is wrong"
-   echo "ERROR:  Make sure that you pulled all the install scripts for Tarpn-Anything from the repo"
-   echo "ERROR:  The install scripts should be located in $TARPN_SRC_DIR for the install to work"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_fix START1DL-NO2 "tarpn_start2.sh (part 2 of the install) is missing from $TARPN_SRC_DIR" \
+      "Your copy of Tarpn-Anything is incomplete.  Get a fresh, complete copy:" \
+      "   cd ~  &&  mv Tarpn-Anything Tarpn-Anything.old" \
+      "   git clone https://github.com/Dkane00/Tarpn-Anything.git" \
+      "and start again from the new Tarpn-Anything folder with  ./tarpn_start1.sh"
 fi
 
 
@@ -679,9 +689,7 @@ then
    sudo mv runbpq.sh $PATH_TO_TARPN_APPS/runbpq.sh;
    echo "#####"
 else
-   echo "ERROR: Failure retrieving runbpq.sh.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_download START1DL-RUNBPQ runbpq.sh
 fi
 
 #### Get TEST-INTERNET.SH
@@ -695,9 +703,7 @@ then
    sudo mv test_internet.sh $PATH_TO_TARPN_APPS/test_internet.sh;
    echo "#####"
 else
-   echo "ERROR: Failure retrieving test_internet.sh.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_download START1DL-TESTNET test_internet.sh
 fi
 
 
@@ -712,9 +718,7 @@ then
    chmod +x configure_node_ini.sh;
    echo "#####"
 else
-   echo "ERROR: Failure retrieving configure_node_ini.sh.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_download START1DL-CONFNODE configure_node_ini.sh
 fi
 
 
@@ -727,9 +731,7 @@ then
    echo "##### boilerplate.cfg downloaded successfully"
    echo "#####"
 else
-   echo "ERROR: Failure retrieving boilerplate.cfg.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_download START1DL-BOILER boilerplate.cfg
 fi
 
 
@@ -743,9 +745,7 @@ then
    chmod +x make_local_bpq.sh;
    echo "#####"
 else
-   echo "ERROR: Failure retrieving make_local_bpq.sh.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_download START1DL-MAKEBPQ make_local_bpq.sh
 fi
 
 #### Get CHATCONFIG.CFG
@@ -757,9 +757,7 @@ then
    echo "##### chatconfig.cfg downloaded successfully"
    echo "#####"
 else
-   echo "ERROR: Failure retrieving chatconfig.cfg.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_download START1DL-CHATCFG chatconfig.cfg
 fi
 
 
@@ -776,9 +774,11 @@ then
    sudo cp tarpn $PATH_TO_TARPN_APPS/tarpn;
    echo "#####"
 else
-   echo "ERROR:  Failure finding tarpn.  Something is wrong"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_fix START1DL-NOTARPN "The tarpn command script is missing from $TARPN_SRC_DIR" \
+      "Your copy of Tarpn-Anything is incomplete.  Get a fresh, complete copy:" \
+      "   cd ~  &&  mv Tarpn-Anything Tarpn-Anything.old" \
+      "   git clone https://github.com/Dkane00/Tarpn-Anything.git" \
+      "and start again from the new Tarpn-Anything folder with  ./tarpn_start1.sh"
 fi
 
 
@@ -885,7 +885,13 @@ echo -e "\n\n\n"
 sleep 1
 
 ##### Tarpn-Anything: make this CPU type (x86 PC, 64-bit ARM, ...) able to run the TARPN programs
-tarpn_prepare_arch || exit 1
+tarpn_prepare_arch || tarpn_fail_fix START1DL-QEMU "QEMU ARM emulation could not be switched on.  The TARPN helper programs are built
+for the Raspberry Pi's ARM chip, so on this $TARPN_ARCH computer they can only run through it." \
+   "Install and switch it on by hand:" \
+   "   sudo apt-get install -y qemu-user-static binfmt-support libc6-armhf-cross" \
+   "   sudo update-binfmts --enable qemu-arm" \
+   "Check it:   cat /proc/sys/fs/binfmt_misc/qemu-arm     (the first line should say 'enabled')" \
+   "If that file is missing even after these steps, please report it at $TARPN_ISSUES_URL"
 sudo apt-get -y install wget file 2>/dev/null
 
 
@@ -995,12 +1001,7 @@ if [ -f piminicom.zip ];
 then
     echo "##### piminicom.zip downloaded."
 else
-    echo "ERROR-989 Something is wrong.  I had access to the proper web site but could"
-    echo "          not acquire the piminicom.zip data from that web site.  "
-    echo "          Abort"
-    echo
-    echo "      Abort.   Please contact tarpn@groups.io"
-    exit 1;
+    tarpn_fail_download ERROR-989 piminicom.zip
 fi
 
 
@@ -1009,11 +1010,7 @@ if [ -f piminicom ];
 then
     echo "##### piminicom extracted from zip archive."
 else
-    echo "####### ERROR-987 Something is wrong.  "
-    echo "        Extracting piminicom from the zip file failed."
-    echo
-    echo "        Abort.   Please contact tarpn@groups.io"
-    exit 1;
+    tarpn_fail_unzip ERROR-987 piminicom.zip
 fi
 chmod +x piminicom
 ##### Tarpn-Anything: piminicom is a 32-bit ARM program.  On other CPUs make sure it really starts;
@@ -1033,11 +1030,7 @@ if [ -f minicom.scr ];
 then
     echo "##### minicom.scr downloaded."
 else
-    echo "ERROR-988 Something is wrong.  I had access to the proper web site but could"
-    echo "          not acquire the minicom.scr data from that web site.  "
-    echo
-    echo "      Abort.   Please contact tarpn@groups.io"
-    exit 1;
+    tarpn_fail_download ERROR-988 minicom.scr
 fi
 cd $HOME
 
@@ -1214,9 +1207,7 @@ then
    pwd
    ls -lrat *nbpq
 else
-   echo "### ERROR: we failed to download the required zip file!"
-   echo "### Complain to tadd@mac.com! Send this entire log file if you can."
-   exit 1
+   tarpn_fail_download START1DL-LINBPQ $latest_bpq_zipfile.zip
 fi
 cd ~/bpq
 echo "##"
@@ -1304,9 +1295,7 @@ if [ -n "$QTTERM_FILE" ]; then
       echo "##### Got $QTTERM_FILE (Intel build of QtTermTCP)"
       QTTERM_GOT=1
    else
-      echo "ERROR41.1 Could not download $QTTERM_FILE from $QTTERM_SITE"
-      echo "##### Aborting"
-      exit 1;
+      tarpn_fail_download ERROR41.1 $QTTERM_FILE "$QTTERM_SITE/$QTTERM_FILE"
    fi
 else
    tarpnget piqttermtcp.dms
@@ -1326,18 +1315,10 @@ then
        mv QtTermTCP.ini ~/Desktop
        echo "##### qt-term has been installed."
     else
-        echo "ERROR76.2 Something is wrong.  I had access to the proper web site but could"
-        echo "          not acquire the QtTermTCP.ini program from that web site."
-        echo "          Abort!  Contact KA2DEW and note this issue. "
-        echo
-        exit 1;
+        tarpn_fail_download ERROR76.2 QtTermTCP.ini
     fi
 else
-    echo "ERROR41   Something is wrong.  I had access to the proper web site but could"
-    echo "          not acquire the piqttermtcp program from that web site."
-    echo "          Abort!  Contact KA2DEW and note this issue. "
-    echo
-    exit 1;
+    tarpn_fail_download ERROR41 piqttermtcp.dms
 fi
 sleep 0.5
 
@@ -1363,11 +1344,7 @@ then
     rm -f ringnoises.zip
     echo "##### RING Noises folder has been downloaded."
 else
-        echo "ERROR42   Something is wrong.  I had access to the proper web site but could"
-        echo "          not acquire the ringnoises folder from that web site."
-        echo "          Abort, no changes."
-        echo
-        exit 1;
+        tarpn_fail_unzip ERROR42 ringnoises.zip
 fi
 rm -f ringnoises.zip
 sleep 0.5
@@ -1537,12 +1514,7 @@ then
     sudo mv trr.sh /usr/local/sbin/trr.sh
     echo "##### trr.sh script has been installed."
 else
-    echo "ERROR-TRR Something is wrong.  I had access to the proper web site but could"
-    echo "          not acquire the trr.sh script from that web site.  "
-    echo "          Abort"
-    echo
-    echo "      Abort.   Please contact tarpn@groups.io"
-    exit 1;
+    tarpn_fail_download ERROR-TRR trr.sh
 fi
 if [ -f w4eip_link_quality.txt ];
 then
@@ -1550,12 +1522,7 @@ then
     sudo mv w4eip_link_quality.txt $PATH_TO_TARPN_APPS/trr
     echo "##### trr command has been installed."
 else
-    echo "ERROR-TRR Something is wrong.  I had access to the proper web site but could"
-    echo "          not acquire the w4eip_link_quality.txt data from that web site.  "
-    echo "          Abort"
-    echo
-    echo "      Abort.   Please contact tarpn@groups.io"
-    exit 1;
+    tarpn_fail_download ERROR-TRR2 w4eip_link_quality.txt
 fi
 
 
@@ -1569,13 +1536,7 @@ then
    sudo mv flashtnc.py /usr/local/sbin/flashtnc.py
    echo "### Installed flashtnc.py"
 else
-    echo "ERROR-flashtnc.py Something is wrong.  I had access to the proper web "
-    echo "                  site but could not acquire the flashtnc.py program"
-    echo "                  from that web site.  "
-    echo "                  Abort"
-    echo
-    echo "      Abort.   Please contact tarpn@groups.io"
-    exit 1;
+    tarpn_fail_download ERROR-flashtnc flashtnc.py
 fi
 rm -f flashtnc.py
 
@@ -1590,13 +1551,7 @@ then
    sudo mv get_tnc_version.py /usr/local/sbin/get_tnc_version.py
    echo "### Installed get_tnc_version.py"
 else
-    echo "ERROR-get_tnc_version.py Something is wrong.  I had access to the proper "
-    echo "      web site but could not acquire the get_tnc_version.py program from"
-    echo "      that web site.  "
-    echo "      Abort.   Please contact tarpn@groups.io"
-    echo
-    echo "##### Aborting"
-    exit 1;
+    tarpn_fail_download ERROR-get_tnc_version get_tnc_version.py
 fi
 rm -f get_tnc_version.py
 
@@ -1631,14 +1586,7 @@ then
     rmdir temp_latest_ninotnc
     ls -lrats /usr/local/etc/ninotnc/versions
 else
-    echo ""
-    echo "ERROR-No NinoTNC code versions available.  Something is wrong.   "
-    echo "      I had access to the proper web site but could not acquire "
-    echo "      latest_ninotnc.zip from that web site. "
-    echo "      Abort.   Please contact tarpn@groups.io"
-    echo
-    echo "##### Aborting"
-    exit 1;
+    tarpn_fail_download ERROR-NINOTNC latest_ninotnc.zip
 fi
 cd ~
 rm -f latest_ninotnc.*
@@ -1680,8 +1628,7 @@ then
 else
    echo -ne $(date) "" >> $HOME_LOGFILE
    echo " tarpn-start1dl.sh  -- FAIL -- unable to download TARPN-HOME!" >> $HOME_LOGFILE
-   echo "TARPN-HOME download failed.  Abort install!"
-   exit 1
+   tarpn_fail_download START1DL-HOMEZIP TARPN_Home_Latest.zip "https://tarpn.net/f/TARPN_Home_Latest.zip"
 fi
 unzip TARPN_Home_Latest.zip
 echo -ne "pwd="
@@ -1693,10 +1640,9 @@ if [ -f tarpn_home.pyc ];
 then
     echo "UNZIP succeeded. "
 else
-    echo "##### ERROR: UNZIP failed.  ."
     echo -ne $(date) "" >> $HOME_LOGFILE
     echo " tarpn-start1dl.sh  -- FAIL -- UNZIP error!" >> $HOME_LOGFILE
-    exit 1;
+    tarpn_fail_unzip START1DL-HOMEUNZIP TARPN_Home_Latest.zip
 fi
 
 echo -ne $(date) "" >> $HOME_LOGFILE
@@ -1720,8 +1666,7 @@ if [ -f $PATH_TO_TARPN_APPS/home_web_app/dateinstalled.txt ];
 then
   echo "TARPN-HOME folder is created in $PATH_TO_TARPN_APPS"
 else
-  echo "TARPN-HOME folder create failed.  Abort install!"
-  exit 1
+  tarpn_fail_report START1DL-HOMEDIR "Could not create the TARPN HOME folder $PATH_TO_TARPN_APPS/home_web_app"
 fi
 
 sudo mv $HOME/temporary_home_web_app/* .
@@ -1757,10 +1702,7 @@ then
 else
    echo -ne $(date) "" >> $HOME_LOGFILE
    echo " TARPN-HOME folder create failed.  Abort install!" >> $HOME_LOGFILE
-   echo -e "\n\n\n\n"
-   echo "          TARPN-HOME folder create failed.  Abort install!"
-   echo -e "\n\n\n\n"
-   exit 1
+   tarpn_fail_report START1DL-HOMEDIR2 "The TARPN HOME files could not be put in $PATH_TO_TARPN_APPS/home_web_app"
 fi
 
 sudo rm -f $HOME/tarpn-home-colors.json
@@ -1830,22 +1772,13 @@ cd ~
 
 if [ -f /etc/systemd/system/home.service ];
 then
-   echo "ERROR!  home SERVICE file already existed in /etc/system.d/system."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_leftover START1DL-HOMESVC "/etc/systemd/system/home.service is already there."
 fi
 
 
 if [ -f ~/home.service ];
 then
-   echo "ERROR!"
-   echo "ERROR!  Premature existence of home.service file in home directory"
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io "
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_leftover START1DL-HOMESVC2 "A leftover file ~/home.service is in your home folder."
 fi
 
 
@@ -1856,32 +1789,14 @@ if [ -f ~/home_background.sh ];
 then
    ls -l home_background.sh
 else
-   echo "ERROR!  Failed to obtain home_background.sh from the web page."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR: Aborting"
-   exit 1
+   tarpn_fail_download START1DL-HOMEBG home_background.sh
 fi
 ##### now home-service.txt should exist in the home directory
 if [ -f ~/home-service.txt ];
 then
    ls -l home-service.txt
 else
-   echo "ERROR!  Failed to obtain home-service.txt from the web page."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR: Aborting"
-   exit 1
+   tarpn_fail_download START1DL-HOMESVCTXT home-service.txt
 fi
 mv home-service.txt home.service
 sudo mv ~/home.service /etc/systemd/system/home.service
@@ -1902,11 +1817,7 @@ then
    echo "###########################################################"
    sleep 1
 else
-   echo "ERROR!  HOME SERVICE file failed to copy to /etc/system.d/system."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_report START1DL-HOMESVCCP "The TARPN HOME service file could not be put in /etc/systemd/system"
 fi
 rm -f home.service*
 rm -f home_background.sh*
@@ -1933,16 +1844,7 @@ if [ -f ~/npa.sh ];
 then
    ls -l npa.sh*
 else
-   echo "ERROR!  Failed to obtain npa.sh from the web page."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a missive about this to tarpn@groups.io"
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR: Aborting"
-   exit 1
+   tarpn_fail_download START1DL-NPASH npa.sh
 fi
 
 ######### INSTALL NEIGHBOR-PORT-ASSOCIATION app  ###################################################################
@@ -1958,19 +1860,7 @@ if [ -f $HOME/npa.zip ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR4.993!  Failed to obtain npa.zip from the web server."
-   echo "            please send a message about this to tarpn@groups.io"
-   echo "            Include the terminal output from this update."
-   echo "ERROR4.993: Aborting"
-   exit 1
+   tarpn_fail_download ERROR4.993 npa.zip
 fi
 
 unzip npa.zip
@@ -1979,19 +1869,7 @@ if [ -f $HOME/neighbor_port_association.app ];
 then
    echo " "
 else
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR4.992!  Error in unzipping npa.zip."
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "        Include the terminal output from this update."
-   echo "ERROR4.992: Aborting"
-   exit 1
+   tarpn_fail_unzip ERROR4.992 npa.zip
 fi
 
 chmod +x neighbor_port_association.app
@@ -2002,11 +1880,7 @@ if [ -x $PATH_TO_TARPN_APPS/neighbor_port_association.app ];
 then
    echo "##### Neighbor-Port-Assocation APP installed"
 else
-   echo "ERROR4.991!  Neighbor-Port-Assocation APP file failed to install."
-   echo "            Please send a message about this to tarpn@groups.io"
-   echo "            Include the terminal output from this update."
-   echo "ERROR4.991: Aborting"
-   exit 1;
+   tarpn_fail_report ERROR4.991 "The neighbor_port_association program could not be installed in $PATH_TO_TARPN_APPS"
 fi
 
 ############################3
@@ -2014,11 +1888,7 @@ echo "##### INSTALL NEIGHBOR-PORT-ASSOCIATON SERVICE #########"
 
 if [ -f /etc/systemd/system/neighbor_port_association.service ];
 then
-   echo "ERROR!  neighbor_port_association SERVICE file already existed in /etc/system.d/system."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_leftover START1DL-NPASVC "/etc/systemd/system/neighbor_port_association.service is already there."
 fi
 
 tarpnget neighbor_port_association-service.txt
@@ -2028,16 +1898,7 @@ if [ -f ~/neighbor_port_association-service.txt ];
 then
    ls -l neighbor_port_association-service.txt*
 else
-   echo "ERROR!  Failed to obtain neighbor_port_association-service.txt from the web page."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "   Note: Outputting debug information to be relayed to he who debugs."
-   ls -lrat
-   pwd
-   echo "url"
-   echo $_source_url
-   echo "ERROR: Aborting"
-   exit 1
+   tarpn_fail_download START1DL-NPASVCTXT neighbor_port_association-service.txt
 fi
 
 mv neighbor_port_association-service.txt neighbor_port_association.service
@@ -2049,11 +1910,7 @@ then
    chmod +x npa.sh
    sudo mv npa.sh $PATH_TO_TARPN_APPS
 else
-   echo "ERROR!  Neighbor-Port-Assocation SERVICE file failed to copy to /etc/system.d/system."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_report START1DL-NPASVCCP "The neighbor_port_association service file could not be put in /etc/systemd/system"
 fi
 
 echo "##### NEIGHBOR-PORT-ASSOCIATON SERVICE installed #########"
@@ -2063,11 +1920,7 @@ if [ -x $PATH_TO_TARPN_APPS/npa.sh ];
 then
    echo "##### Neighbor-Port-Assocation script installed"
 else
-   echo "ERROR!  Neighbor-Port-Assocation script file failed to install."
-   echo "        If you got this message during a clean install, then"
-   echo "        please send a message about this to tarpn@groups.io"
-   echo "ERROR: Aborting"
-   exit 1;
+   tarpn_fail_report START1DL-NPASHCP "npa.sh could not be installed in $PATH_TO_TARPN_APPS"
 fi
 
 
@@ -2112,10 +1965,7 @@ echo "### XINETD installed."
 echo " "
 echo "Install CUSTOM-BPQ-COMMANDS.002."
 if grep -q "63000" /etc/services; then
-   echo "### ERROR541.7: "
-   echo "### fail in CUSTOM-BPQ-COMMANDS.  Note: port 63000 already present in /etc/services"
-   echo "### Contact tarpn@groups.io - this is a bug."
-   exit 1;
+   tarpn_fail_leftover ERROR541.7 "/etc/services already has the TARPN port 63000 entries."
 fi
 tarpnget custom-bpq-commands-services.002
 if [ -f custom-bpq-commands-services.002 ];
@@ -2129,9 +1979,7 @@ then
    echo "### version 002 BPQ custom commands SERVICES now newly installed"
    echo " "
 else
-   echo "### ERROR541.8: Fail in CUSTOM-BPQ-COMMANDS in retrieving the /etc/services details from tarpn.com"
-   echo "###        Contact tarpn@groups.io  -- this is a bug."
-   exit 1;
+   tarpn_fail_download ERROR541.8 custom-bpq-commands-services.002
 fi
 
 
@@ -2149,9 +1997,7 @@ then
    echo "### version 004 BPQ custom commands INETD now installed"
    echo " "
 else
-   echo "### ERROR541.9: Fail in version 004 BPQ custom commands INETD in retrieving the /etc/inetd details from tarpn.com"
-   echo "###             Contact tarpn@groups.io  -- this is a bug."
-   exit 1;
+   tarpn_fail_download ERROR541.9 custom-bpq-commands-inetd.004
 fi
 
 
@@ -2216,14 +2062,9 @@ then
     sudo mv node_calls_linktest.sh $PATH_TO_TARPN_APPS/node_calls_linktest.sh
     echo "##### NODE_CALLS_LINKTEST script has been installed."
 else
-    echo "ERROR3.006   Something is wrong.  I had access to TARPN server but could"
-    echo "             not acquire the NODE_CALLS_LINKTEST script from TARPN server.  "
-    echo "             Abort"
     echo -ne $(date) "" >> $TARPNCOMMANDLOGFILE
     echo "ERROR3.006. Cound not acquire NODE_CALLS_LINKTEST script from TARPN server"  >> $TARPNCOMMANDLOGFILE
-    echo
-    echo "##### Aborting"
-    exit 1;
+    tarpn_fail_download ERROR3.006 node_calls_linktest.sh
 fi
 
 ########################### TARPN-MON ###########################################################################################################
@@ -2269,16 +2110,7 @@ then
     sudo rm -f $PATH_TO_TARPN_APPS/tarpn-mon
     sudo mv tarpn-mon $PATH_TO_TARPN_APPS/tarpn-mon
 else
-    echo "ERROR4.098!  Outputting debug information to be relayed to he who debugs."
-    ls -lrat
-    pwd
-    echo "url"
-    echo $_source_url
-    echo "ERROR4.092!  Failed to obtain WA2M tarpn-mon from the web server."
-    echo "        please send a missive about this to tarpn@groups.io"
-    echo "        Include the terminal output from this update."
-    echo "ERROR4.092: Aborting"
-    exit 1
+    tarpn_fail_download ERROR4.092 tarpn-mon.linux-arm32.zip
 fi
 
 
@@ -2309,16 +2141,7 @@ then
     echo -ne $(date) "" >> $TARPNMON_RUNNER_LOG
     echo "tarpn-mon-service is enabled - waiting for start."  >> $TARPNMON_RUNNER_LOG
 else
-    echo "ERROR4.098!  Outputting debug information to be relayed to he who debugs."
-    ls -lrat
-    pwd
-    echo "url"
-    echo $_source_url
-    echo "ERROR4.098!  Failed to obtain tarpn-mon-service.txt from the web server."
-    echo "        please send a missive about this to tarpn@groups.io"
-    echo "        Include the terminal output from this update."
-    echo "ERROR4.098: Aborting"
-    exit 1
+    tarpn_fail_download ERROR4.098 tarpn-mon-service.txt
 fi
 
 
@@ -2331,12 +2154,7 @@ then
     echo "##### TARPN-MON-RUNNER file installed"
     sleep 1
 else
-    echo "ERROR4.099! TARPN-MON SERVICE file failed"
-    echo "              to copy to /etc/system.d/system."
-    echo "              Please send a missive about this to tarpn@groups.io"
-    echo "              Include the terminal output from this update."
-    echo "ERROR4.099: Aborting"
-    exit 1;
+    tarpn_fail_download ERROR4.099 tarpnmon-runner.sh
 fi
 
 

@@ -26,8 +26,7 @@ else
          echo $1 "downlaoded on 3rd try by startget"
       else
          echo "startget    Failed to download" $1
-         echo "startget    Abort script"
-         exit 1
+         tarpn_fail_download START1-GET "$1" "$SOURCE_URL/$1"
       fi
    fi
 fi
@@ -141,20 +140,47 @@ cd "$TARPN_SRC_DIR" || exit 1
 for _needed in tarpn_start1.sh tarpn_start1dl.sh tarpn_start2.sh tarpn tarpn_portable.sh; do
    if [ ! -f "$TARPN_SRC_DIR/$_needed" ];
    then
-      echo "ERROR:  The file $_needed is missing from $TARPN_SRC_DIR"
-      echo "ERROR:  Please get ALL the files of the Tarpn-Anything repo (git clone) and try again.  Aborting"
+      # (the error helpers live in tarpn_portable.sh, which may be the missing file - so say it here)
+      echo
+      echo "####################################################################################"
+      echo "####  THE TARPN INSTALL HAS STOPPED     error START1-REPO   in tarpn_start1.sh"
+      echo "####################################################################################"
+      echo "####  What went wrong:"
+      echo "####     The file $_needed is missing from $TARPN_SRC_DIR"
+      echo "####     The install needs ALL the files of the Tarpn-Anything repo."
+      echo "####"
+      echo "####  How to fix it - download a fresh, complete copy and start again:"
+      echo "####     cd ~"
+      echo "####     mv Tarpn-Anything Tarpn-Anything.old     (only if that folder exists)"
+      echo "####     git clone https://github.com/Dkane00/Tarpn-Anything.git"
+      echo "####     cd Tarpn-Anything"
+      echo "####     ./tarpn_start1.sh"
+      echo "####  (no git?   sudo apt-get install -y git )"
+      echo "####################################################################################"
       exit 1;
    fi
 done
 
 ######## Load the portability helper, and remember WHICH USER we are installing for
 source "$TARPN_SRC_DIR/tarpn_portable.sh"
-tarpn_record_user || exit 1
+TARPN_INSTALL_PART=1                      # for the error messages: which part of the install this is
+TARPN_INSTALL_SCRIPT=tarpn_start1.sh
+export TARPN_INSTALL_PART
+tarpn_record_user || tarpn_fail_fix START1-ROOT "The install was started as the root user (or with sudo)." \
+   "Log in as the normal user the TARPN node should belong to (it needs sudo rights)," \
+   "and start the install as that user, WITHOUT sudo in front:" \
+   "   cd $TARPN_SRC_DIR" \
+   "   ./tarpn_start1.sh"
 echo "###### Installing TARPN for user '$TARPN_USER' (home $TARPN_HOME) on a '$TARPN_ARCH' system"
 
 #### wget is needed to fetch things from the TARPN web site
 if ! command -v wget &> /dev/null; then
    sudo apt-get install -y wget
+   command -v wget &> /dev/null || tarpn_fail_fix START1-WGET "The program wget is missing and could not be installed." \
+      "Install it by hand, then start again:" \
+      "   sudo apt-get update" \
+      "   sudo apt-get install -y wget" \
+      "If apt-get itself fails, check this computer's internet connection."
 fi
 
 
@@ -307,19 +333,9 @@ fi
 
 _good_result=1
 if [ $_version_ok -ne $_good_result ]; then
-    echo "----------------------------------------------"
-        echo "PROC CPUINFO:"
-    cat /proc/cpuinfo
-    echo "----------------------------------------------"
-    sleep 1
-    echo "You have an unexpected or unsupported hardware platform."
-    echo "TARPN is not supported on this version, so far."
-    echo "Please contact me, KA2DEW --see QRZ for email addr--,"
-    echo "and send me the contents of your"
-    echo "/proc/cpuinfo  file printed above."
-    echo
-    echo
-    exit 0
+    # (Tarpn-Anything always creates the bypass file above, so this should never happen)
+    tarpn_fail_report START1-HARDWARE "The hardware check did not recognise this computer, even though
+Tarpn-Anything is meant to skip that check (/usr/local/etc/bypass-platform-checks.txt)."
 fi
 
 ################ CHECK Operating system Version
@@ -367,46 +383,11 @@ if [ -f /usr/local/sbin/tarpn_start1dl.flag ];
 then
     if [ -f /usr/local/sbin/tarpn_start2.flag ];
     then
-        echo "##### Error XX55KK"
-        echo "#####  Incomplete installation.  Please start installation again by"
-        echo "#####  using a freshly formatted SD card or USB drive."
-        echo "#####  Please see the:"
-        echo "#####  ==Set Up raspberry PI to be a TARPN Node--Make SDCARD=="
-        echo "#####  instructions on the builders page of tarpn.net."
-        echo "#####  If this has already failed, please send an email"
-        echo "#####  to the TARPN groups.io.  It is likely that either the"
-        echo "#####  script author made a mistake, or the software involved"
-        echo "#####  has changed in some way to make the scripts fail.  Thanks."
-        echo " "
-        echo "          Ending install now!"
-        echo " "
-        exit 1
+        TARPN_INSTALL_PART=done tarpn_fail_fix XX55KK "TARPN is already fully installed on this system (both install parts finished)." \
+           "Nothing needs fixing - the node is installed.  Use the  tarpn  command to work with it" \
+           "(for example  tarpn test , tarpn config ).  To update Tarpn-Anything, see the README."
     else
-        echo "ERROR!"
-        sleep 1
-        echo "ERROR!"
-        sleep 1
-        echo "ERROR!"
-        sleep 1
-        echo "ERROR!"
-        sleep 1
-        echo "##### Error XX55CC"
-        echo "#####  Incomplete installation.  Please start installation again by"
-        echo "#####  using a freshly formatted SD card or USB drive."
-        echo "#####  Please see the:"
-        echo "#####  ==Set Up raspberry PI to be a TARPN Node--Make SDCARD=="
-        echo "#####  instructions on the builders page of tarpn.net."
-        echo "#####  If this has already failed, please send an email"
-        echo "#####  to the TARPN groups.io.  It is likely that either the"
-        echo "#####  script author made a mistake, or the software involved"
-        echo "#####  has changed in some way to make the scripts fail.  Thanks."
-        sleep 1
-        echo "ERROR!"
-        sleep 1
-        echo "ERROR!"
-        sleep 1
-        echo "ERROR!"
-        exit 1;
+        tarpn_fail_leftover XX55CC "An earlier install attempt on this system started part 1 but did not finish."
      fi
 fi
 
@@ -416,16 +397,8 @@ fi
 
 if [ -f /usr/local/etc/sudoerstest.txt ];
 then
-   echo "ERROR:  This appears to be a spoiled file-system, i.e. some things ."
-   echo "ERROR:  have been changed from default.  "
-   echo "ERROR:  Please re-image the SD card or drive."
-   echo "ERROR:  Any user name is fine, but that user must have sudo rights."
-   echo "ERROR:  If this is not correct, please send a note to tarpn@groups.io and"
-   echo "ERROR:  include this error message as well as the following block of data:"
-   echo "ERROR:  LS of etc"
-   ls -lrats /usr/local/etc
-   echo "ERROR:   Aborting now."
-   exit 1
+   tarpn_fail_leftover START1-SUDOTEST "The marker file /usr/local/etc/sudoerstest.txt is already there - an earlier
+install attempt on this system got at least this far."
 else
    uptime > $HOME/sudoerstest.txt
    date >> $HOME/sudoerstest.txt
@@ -434,23 +407,13 @@ else
    then
        echo
    else
-       echo "ERROR:  The user named '$USER' needs to have sudo access to install TARPN. "
-       echo "ERROR:  The script's test for access has returned a failure."
-       echo "ERROR:  NEED to add '$USER' to the 'sudo group' "
-       echo "ERROR:  Command to add '$USER' to the sudo group:"
-       echo "COMMAND:  sudo usermod -aG sudo $USER"
-      #  echo "ERROR:  Please use Raspberry PI Imager to re-image the SDcard."
-      #  echo "ERROR:  Make sure to set up 'pi' as the user name in the PI startup prompts."
-      #  echo "ERROR:"
-      #  echo "ERROR:  If this error is unexpected, please send a note"
-      #  echo "ERROR:  to tarpn@groups.io and include this error message"
-      #  echo "ERROR:  as well as the following block of data:"
-      #  echo "ERROR:  LS of etc"
-      #  ls -lrats /usr/local/etc
-      #  echo "ERROR:  LS of PI"
-       ls -lrats
-       echo "ERROR:   Aborting now."
-       exit 1
+       tarpn_fail_fix START1-SUDO "The user '$USER' does not have sudo (administrator) rights, which the install needs." \
+          "Give '$USER' sudo rights.  You need the root password or another admin account for this:" \
+          "   su -                          (log in as root; or log in as an admin user)" \
+          "   usermod -aG sudo $USER" \
+          "   exit" \
+          "Then log out of '$USER' completely and log back in (or reboot) so the change takes effect." \
+          "Check it worked:   sudo -v     (it should ask for YOUR password, not say 'not in the sudoers file')"
     fi
 fi
 
@@ -519,9 +482,7 @@ then
    sudo chmod 755 /usr/local/sbin/tarpn_portable.sh
    sudo mv tarpnget.sh /usr/local/sbin/tarpnget.sh
 else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving tarpnget.  Something is wrong"
-   echo -e "ERROR: Aborting\n\n\n\n\n"
-   exit 1;
+   tarpn_fail_download START1-TARPNGET tarpnget.sh "$SOURCE_URL/tarpnget.sh"
 fi
 
 echo
@@ -533,9 +494,7 @@ then
    chmod +x sleep_with_count.sh;
    sudo mv sleep_with_count.sh /usr/local/sbin/sleep_with_count.sh
 else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving sleep_with_count.  Something is wrong"
-   echo -e "ERROR: Aborting\n\n\n\n\n"
-   exit 1;
+   tarpn_fail_download START1-SLEEPCOUNT sleep_with_count.sh "$SOURCE_URL/sleep_with_count.sh"
 fi
 
 # echo "###### Download TARPN INSTALL 1dL"
@@ -554,9 +513,11 @@ then
    echo "##### Transfer control from TARPN START 1 to TARPN START 1dL"
    ./tarpn_start1dl.sh
 else
-   echo -e "\n\n\n\n\nERROR:  Failure retrieving script1dl.  Something is wrong"
-   echo -e "ERROR: Aborting\n\n\n\n\n"
-   exit 1;
+   tarpn_fail_fix START1-NO1DL "tarpn_start1dl.sh (the next install step) is missing from $TARPN_SRC_DIR" \
+      "Your copy of Tarpn-Anything is incomplete.  Get a fresh, complete copy:" \
+      "   cd ~  &&  mv Tarpn-Anything Tarpn-Anything.old" \
+      "   git clone https://github.com/Dkane00/Tarpn-Anything.git" \
+      "and start again from the new Tarpn-Anything folder."
 fi
 exit 0
 
